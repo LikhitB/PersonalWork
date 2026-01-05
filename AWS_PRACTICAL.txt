@@ -1,0 +1,30 @@
+301442091882 -> likhit hero
+
+ASSIGINING ROLE TO A USER IN AWS
+==================================
+Definition:An IAM Role is an AWS identity that defines a set of permissions, but unlike an IAM user, it does not have long‑term credentials. Instead, it is assumed by trusted entities — such as EC2 instances, Lambda functions, ECS tasks, or even external users via identity federation. When the role is assumed, AWS issues temporary security credentials that expire automatically.
+
+-login to root account create a role in account mode(there will some modes like service etcc..)
+-create policy for that role ex:-s3FullAccess
+-now login to the user account 
+-add the arn:: link of the role in the inline policy of the user and set the principal as sts::assumeRole.
+-now relogin to the root account and copy the arn::link to switch role.
+-logout from root and relogin to user account and paste the arn link -> enter -> windows pops to switch role and BOOM the user is now on the created role.
+-Trusted Policy -> shows who can take this role
+ example- its for resource mode
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sts:AssumeRole"  -> assumed by  EC2.
+            ],
+            "Principal": {
+                "Service": [
+                    "ec2.amazonaws.com"    -> EC2 can take this role 
+                ]
+            }
+        }
+    ]
+}        

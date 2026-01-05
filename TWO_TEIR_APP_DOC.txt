@@ -1,0 +1,17 @@
+Users
+likhithero -> basic s3,ec2,elb,asg full access permisssions
+
+VPC
+-VPC CIDR Block -> 256ips i.e /24 = 1 range  (10.0.0.0/24)
+-subnets 
+ -privateSubnet1ForEpicReads (private) ->10.0.0.0/26
+  -it has range of 10.0.0.0 -> 10.0.0.63
+ -privateSubnetForEpicReads1 (private)   -> 10.0.0.0/26
+  -it has range of 10.0.0.64/26 -> 10.0.0.127/26
+ -privateSubnetForEpicReads2 (private)
+  -it has range of 10.0.0.128/26 -> 10.0.0.255/26 -> 10.0.0.128/26
+ -a rout table is associated, which has route to internet gateway on 0.0.0.0/0. so this subnet is officially public.
+ -a route table is not attached so the other subnet becomes private
+ 
+
+

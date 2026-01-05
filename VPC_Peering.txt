@@ -1,0 +1,21 @@
+- Process of VPC peering
+
+  - lets consider 3 VPC(marketing,finance,developer) which have 3 instances in them so we need to peer marketing and developer with finance
+  - each VPC has one subnet and finance has private subnet
+  - security groups which are not configured
+  - process
+    - lets consider first marketing,finaance connection
+      - first we check by pinging finanace instance through marketing session manager
+      - we get nothing as VPC is private
+      - So now we go to peering connection in VPC and add
+        - VPC ID of requester
+        - VPC ID of accepter
+        - CIDR(classless internet domain routing) -> it must be different for both of them
+          - example 10.10.0.0/16 is for marketing , 172.31.0.0/16 is for finance
+      - after setting up the peering and accepting that peering connection
+      - its time to add rules in the routing tables of instance in each subnets
+        - the rule must us "peering connection" 
+      - now if we chek in session manager of marketing instance still finance doest responds
+      - so the solution is add inbound rule to the finance security groups i.e allow ICMP(internet control message protocol) traffic from marketing           instance 
+   - now we successfully connected the VPC same repeats for developer.
+        

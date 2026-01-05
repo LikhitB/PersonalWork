@@ -1,0 +1,2082 @@
+1.ASG launches scaling activity by terminating the unhealthy instances and then creates new one.(termnate-> launch)
+2.In case of AZ imbalance ASG launches the scaling policy by creating the new instances and then terminate the intances.(launch -> terminate)
+3.Aurora DB Global Tables(multi regional Db) allow read replicas in other regions and write for the main region.
+4.Lambda layer is a feature which packages the libraries which are shared to the codes present in the lambda functions.
+  - these are limited upto 250MB
+5.EFS has the access points(from EFS resource policies) through which the services like lambda(of other account) can access the files in the EFS(in different acc),it uses VPC peering too.
+
+6. OLTP -> online transaction processing , MPP -> Massasive parallel processing , EMR -> elastic amp reducer
+   - Reshift is serverless
+   - Aurora is used for transaction.
+
+| Term | Focus               | Best for                          | AWS Example   |
+| ---- | ------------------- | --------------------------------- | ------------- |
+| OLTP | Transactions        | Real-time inserts/updates         | RDS, Aurora   |
+| MPP  | Analytics           | Big data aggregation              | Redshift, EMR |
+| EMR  | Big data processing | Transform & analyze data at scale | EMR + S3      |
+
+
+SNS -> why pub/sub with the example
+
+In a gaming app:
+
+Publisher: Game server publishes score updates to an SNS topic.
+Subscribers:
+
+Lambda updates the leaderboard.
+Another subscriber sends push notifications to players.
+
+Feature                         | Amazon SQS                                 | Amazon Kinesis Data Streams
+--------------------------------|--------------------------------------------|----------------------------------------------
+Message Pattern                 | Queue-based (point-to-point)               | Stream-based (real-time data ingestion)
+Ordering Guarantee              | FIFO queues support ordering (limited TPS) | Maintains strict ordering within shards
+Throughput                      | Moderate                                   | High-throughput, scalable for big data
+Data Retention                  | Up to 14 days                              | Up to 365 days
+Multiple Consumers              | Each message consumed by one consumer      | Multiple consumers can read same data
+Use Case                        | Task queues, decoupling components         | Real-time analytics, event streaming
+
+
+IRSA(IAM Roles for service accounts) is the best practice for EKS → secure, scalable, and least privilege.
+Avoid node-level permissions for multi-service clusters.
+Avoid giving broad permissions to all Pods.
+
+Amazon RDS (standard):
+
+Fully managed, but does NOT allow OS-level or DB-level customizations.
+Great for standard Oracle deployments, but not for legacy apps needing custom patches or configurations.
+
+
+Amazon RDS Custom:
+
+Designed for applications requiring OS and DB customizations.
+Provides SSH access to the underlying host.
+Still offers managed features like backups, monitoring, and Multi-AZ for high availability.
+If you need custom OS and DB configurations → RDS Custom.
+If you need minimal maintenance + HA → Multi-AZ RDS Custom.
+Avoid EC2 unless you need full control and can handle management overhead
+
+
+======================================================
+Scaling Policies:
+
+Scheduled Scaling: Predefined time-based scaling.
+Dynamic Scaling:
+Simple Scaling: Based on CloudWatch alarms.
+Target Tracking: Maintains a metric at a target value.
+
+Predictable vs Unpredictable Workloads:
+Predictable → Scheduled scaling.
+Unpredictable → Dynamic scaling.
+
+===================================================
+Stateless vs Stateful:
+Stateless: No session info stored on server; each request is independent (REST).
+Stateful: Persistent connection; server remembers client state (WebSocket).
+
+Full-duplex:
+Both client and server can send messages simultaneously (WebSocket).
+
+Amazon API Gateway:
+Supports REST APIs (HTTP-based).
+Supports WebSocket APIs (real-time, bidirectional).
+
+Hybrid DNS Resolution
+
+When AWS resources need to resolve on-premises private DNS names, you use Route 53 Resolver.
+
+
+================================================
+Route 53 Resolver Endpoints
+
+Outbound Endpoint:
+
+For DNS queries from AWS to on-premises DNS servers.
+Used when VPC resources need to resolve on-premises domains.
+
+Inbound Endpoint:
+
+For DNS queries from on-premises to AWS private hosted zones.
+Used when on-premises resources need to resolve AWS private domains.
+
+Forwarding Rules
+
+Define which domain names (e.g., corp.local) should be forwarded to on-premises DNS servers.
+Associate rules with the VPC so queries follow them.
+
+Why Not Private Hosted Zone?
+Private hosted zones only work for AWS resources and require duplicating DNS records, which is not scalable.
+
+Security
+DNS queries are sent over site-to-site VPN or Direct Connect, ensuring encryption and privacy.
+
+AWS Best Practice
+Use Route 53 Resolver outbound endpoint + forwarding rules for hybrid DNS resolution.
+
+===============================================================================================================
+ECS Pricing Key Points for SAA Exam
+
+Amazon ECS service itself is free → You pay for underlying resources.
+EC2 Launch Type:
+
+Pricing based on EC2 instances and EBS volumes you provision.
+You manage servers (patching, scaling).
+
+
+Fargate Launch Type:
+
+Pricing based on vCPU and memory resources requested by containers.
+No EC2 or EBS cost (AWS manages infrastructure).
+
+
+Exam Tip:
+
+EC2 launch type → EC2 + EBS cost.
+Fargate launch type → vCPU + memory cost.
+
+
+ECS does NOT have an hourly charge.
+
+==============================================
+
+Global Accerator
+
+Provides static IP addresses that act as a single entry point for your application globally.
+Uses Anycast routing to direct traffic to the nearest healthy AWS endpoint.
+Supports TCP and UDP traffic (critical for gaming apps).
+Enables fast regional failover because it continuously monitors health and reroutes traffic instantly if a region goes down.
+Improves performance and availability by leveraging the AWS global network.
+
+
+Route 53 is DNS-based failover, which:
+
+Relies on DNS propagation and TTL, so failover is not instant.
+Does not optimize performance for UDP traffic.
+DNS changes can take seconds to minutes, which is too slow for gaming apps needing real-time failover.
+
+
+==============================
+
+S3 → Cheapest for object storage (pay per GB used).
+EFS → More expensive than S3 (pay per GB used, but higher rate).
+EBS → Can be most expensive if over-provisioned (pay for provisioned size, not usage).
+
+=================================
+
+IAM roles and IAM users can be used interchangeably
+False. IAM users are tied to one account and cannot be assumed by other accounts.
+IAM roles are specifically designed for cross-account access.
+
+It is not possible to access cross-account resources
+Incorrect. AWS supports cross-account access via roles and trust policies.
+
+Create new IAM user credentials in production and share them
+Very insecure and against AWS best practices.
+Hard to manage, rotate, and audit.
+
+Cross-account access → Always think IAM Role + Trust Policy + AssumeRole.
+Never share IAM user credentials across accounts.
+Use STS AssumeRole for temporary, secure access.
+
+===================================
+
+A policy attached to an IAM principal (user or role) that defines the maximum permissions that principal can have.
+Works in conjunction with IAM policies:
+
+Effective permissions = Intersection of IAM policy and permissions boundary.
+
+Example:
+
+IAM policy says: dynamodb:*
+Permissions boundary says: dynamodb:ReadOnly
+Result: User can only perform read operations, even though the policy is broader.
+
+Best Practice
+Apply least privilege principle.
+Use IAM roles for access instead of permanent IAM user credentials.
+Implement permissions boundaries for developers and other roles.
+Use AWS Organizations Service Control Policies (SCPs) for account-level restrictions.
+if the question mentions preventing privilege escalation or limiting permissions, think Permissions Boundaries.
+If it mentions cross-account restrictions, think SCPs.
+Never share root credentials or rely on manual reviews.
+
+====================================
+AWS Organizations:
+Centralized management of multiple AWS accounts.
+Works with IAM Identity Center for unified access control.
+
+AWS Directory Service AD Connector:
+Lightweight proxy to connect AWS to on-prem AD.
+No replication of directory data → minimal overhead.
+
+IAM Identity Center (AWS SSO):
+Centralized identity and access management for multiple accounts.
+Assign permission sets to AD groups → easy governance.
+
+Permission Sets:
+Define what actions users can perform in AWS accounts.
+Mapped to AD groups for role-based access.
+
+Deploy open-source IdP on EC2:
+High operational overhead (patching, scaling, HA).
+Not the least management effort.
+
+Deploy AWS Managed AD and trust with on-prem AD:
+Requires setting up trust relationships and managing AWS AD.
+More complex and costly than AD Connector.
+
+Use AWS Control Tower + manual IAM roles:
+Manual process → not scalable.
+No integration with existing AD → defeats the purpose.
+
+================================================================
+What is AWS Control Tower?
+
+A management and governance service for multi-account environments.
+Automates the setup of a landing zone (a secure, compliant AWS environment).
+Works with AWS Organizations to create and manage multiple accounts.
+
+Key Features
+
+Landing Zone:
+Pre-configured environment with security, compliance, and account structure.
+Includes organizational units (OUs), guardrails, and baseline policies
+
+Guardrails:
+Predefined policies for governance and compliance.
+
+Two types:
+Preventive (e.g., deny actions via Service Control Policies).
+Detective (e.g., monitor compliance via AWS Config).
+
+Account Factory:
+Automates creation of new AWS accounts with standard configurations.
+
+Integration:
+Works with AWS Organizations, IAM Identity Center, AWS Config, and CloudTrail.
+=======================================================================
+
+AM Role has two policies:
+Permissions Policy → What actions the role can perform.
+Trust Policy → Who can assume the role.A trust relationship in AWS IAM defines who is allowed to assume a role.
+
+It is implemented using a trust policy attached to an IAM role.
+The trust policy specifies the principal (user, role, or account) that can call sts:AssumeRole on that role.
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:root"
+      },
+      "Action": "sts:AssumeRole"  -> trust policy
+    }
+  ]
+}
+
+========================================================================
+ReplaceUnhealthy is the Auto Scaling process that terminates and replaces instances deemed unhealthy.
+Standby removes the instance from Auto Scaling activities but keeps it running, so you can safely perform maintenance.
+
+Standby = safest way to perform maintenance on instances in an Auto Scaling group.
+ReplaceUnhealthy = the process that replaces instances failing health checks; suspend it during maintenance if needed.
+ScheduledActions = only for time-based scaling, not health or replacement logic.
+
+
+=========================================================================
+
+A threshold is a fixed value that triggers an action when crossed.
+Used in simple scaling or step scaling policies.
+Example:
+
+If CPU utilization exceeds 70%, scale out by 2 instances.
+If CPU utilization drops below 30%, scale in by 1 instance.
+Behavior: Reactive. It only acts when the metric goes above or below the threshold. It does not maintain a steady state.
+
+
+A target is a desired value that the system continuously tries to maintain.
+Used in target tracking scaling policy.
+
+Example:
+Set CPU utilization target = 50%.
+Auto Scaling will dynamically add or remove instances to keep CPU near 50%.
+Behavior: Proactive and continuous. Works like a thermostat—always adjusting to stay close to the target.
+
+=========================================================================
+Babelfish is a feature of Aurora PostgreSQL that enables T‑SQL and the TDS communication protocol (used by SQL Server). This lets many SQL Server apps connect to Aurora as if it were SQL Server, dramatically reducing or even eliminating application changes.
+
+AWS SCT analyzes the SQL Server schema and converts objects (tables, indexes, views, stored procedures—where possible) to PostgreSQL/Aurora equivalents. It also flags items that need manual changes.
+AWS DMS performs the data migration (full load + CDC for ongoing changes), minimizing downtime and keeping systems in sync during cutover.
+
+=========================================================================
+
+Application Load Balancer (ALB):
+Supports content-based routing (path-based, host-based, header-based).
+Distributes traffic across multiple AZs for high availability.
+
+
+Auto Scaling Group:
+Automatically replaces failed instances and scales based on demand.
+Ensures the fleet remains healthy without manual intervention.
+
+Network Load Balancer + Private IP
+NLB is for ultra-low latency and TCP/UDP traffic, not content-based routing.
+Private IP doesn’t mask instance failure; ALB health checks + Auto Scaling do.
+
+Auto Scaling Group + Elastic IP
+Elastic IP attaches to a single instance, not a fleet.
+Doesn’t provide load balancing or content-based routing
+
+Auto Scaling Group + Public IP
+Same issue: Public IP is per instance, not scalable or fault-tolerant.
+No load balancing or routing logic.
+
+==========================================================================
+Amazon API Gateway:
+Provides a REST API endpoint for external systems to send or retrieve data.
+
+
+Amazon Kinesis Data Analytics:
+Processes real-time streaming data (truck location updates) from Kinesis Data Streams or Firehose.
+Enables real-time analytics without waiting for batch processing.
+
+==========================================================================
+Amazon API Gateway:
+Provides a REST API endpoint for external systems to send or retrieve data.
+
+
+Amazon Kinesis Data Analytics:
+Processes real-time streaming data (truck location updates) from Kinesis Data Streams or Firehose.
+Enables real-time analytics without waiting for batch processing.
+
+=========================================================================
+
+Amazon Comprehend is a fully managed NLP service that can extract entities (like ingredients) from text.
+Supports custom entity recognition, so you can train it to detect ingredient names without building a model from scratch.
+
+Amazon Transcribe: Converts audio to text, but your input is already text. Creating synthetic audio adds unnecessary complexity and cost.
+Amazon SageMaker custom NLP model: Requires ML expertise, model training, and ongoing maintenance—high cost and operational burden.
+
+==========================================================================
+AWS Outposts brings AWS infrastructure into your data center. It’s physically installed on-site, so workloads and data stay on-prem while using native AWS services, networking, and APIs.
+
+===========================================================================
+AWS Direct Connect is a networking service that provides a dedicated, private connection between your on-premises data center (or colocation facility) and AWS.
+
+===========================================================================
+Amazon GuardDuty
+
+Purpose: A threat detection service that continuously monitors for malicious activity and unauthorized behavior in your AWS environment.
+What it analyzes:
+
+AWS CloudTrail logs (API calls)
+VPC Flow Logs (network traffic)
+DNS logs
+S3 data access logs (detects suspicious access patterns)
+
+Key Features:
+Detects crypto-mining, unusual API calls, port scanning, data exfiltration attempts.
+No agents required; fully managed.
+Integrates with AWS Security Hub, Amazon EventBridge, and can trigger Lambda for automated remediation.
+
+Use Case in Question:
+Monitor malicious activity on data stored in Amazon S3 (e.g., unusual access or exfiltration attempts).
+
+Amazon Inspector
+Purpose: An automated vulnerability management service for EC2 instances, container images in ECR, and Lambda functions.
+What it does:
+Scans for software vulnerabilities (CVEs).
+Checks network exposure and misconfigurations.
+
+Key Features:
+Continuous scanning (not just one-time).
+Prioritizes findings based on risk score.
+Integrates with AWS Security Hub and EventBridge for alerts and automation.
+
+Use Case in Question:
+Perform security assessments on EC2 instances to identify vulnerabilities.
+=============================================================================
+
+S3 Standard
+Keywords:
+Hot Data, Frequent Access, Low Latency, No Minimum Duration
+Use Case: Frequently accessed data, short-lived or active workloads.
+
+S3 Standard-IA (Infrequent Access)
+Keywords:
+Cool Data, Occasional Access, 30-Day Minimum, Retrieval Cost
+Use Case: Data accessed less often but still needs quick retrieval.
+
+
+S3 One Zone-IA
+Keywords:
+Single AZ, Lower Cost, Cool Data, Risk Tolerant
+Use Case: Non-critical infrequently accessed data that can tolerate AZ loss.
+
+
+S3 Glacier Instant Retrieval
+Keywords:
+Archive, Rare Access, Low Cost, Retrieval Fee
+Use Case: Archival data that needs occasional instant access.
+
+S3 Glacier Flexible Retrieval
+Keywords:
+Deep Archive, Hours Retrieval, Lowest Cost, Long-Term Storage
+Use Case: Backup or compliance data rarely accessed.
+
+
+S3 Glacier Deep Archive
+Keywords:
+Cold Storage, Very Rare Access, Cheapest, 12+ Hours Retrieval
+Use Case: Long-term archival with almost no access.
+===============================================================================
+
+API Gateway → Secure endpoint for mobile clients.
+AWS Lambda → Lightweight validation (short-lived tasks).
+Amazon ECS with Fargate → Backend processing for long-running, compute/memory-intensive tasks.
+Why Fargate? → No server/container management, automatic scaling, fully managed.
+===============================================================================
+
+Event routing service: It connects different AWS services and custom applications using events.
+Decoupling components: Producers (like an app or service) send events without knowing who consumes them.
+Integration: It can trigger Lambda, Step Functions, ECS tasks, or other services based on event patterns.
+
+Dynamic filtering: You can define rules to route only relevant events to targets.
+Scalable and serverless: No infrastructure to manage.
+Supports SaaS integrations: Works with external apps like Zendesk, Shopify, etc.
+Ideal for workflows: When multiple services need to react to the same event.
+================================================================================
+
+Amazon S3 supports multipart upload, which allows you to split a large file into smaller parts (chunks) and upload them in parallel. This has several advantages:
+
+Parallelism: Multiple parts can be uploaded simultaneously, reducing overall upload time.
+Resilience: If a part fails, you only need to retry that part, not the entire file.
+Efficiency: Especially useful for files larger than 100 MB (your file is 2 GB, so this is ideal).
+
+================================================================================
+
+Amazon S3 Transfer Acceleration (S3TA) uses Amazon CloudFront’s globally distributed edge locations to speed up uploads over long distances. Instead of sending data directly to the S3 bucket endpoint, you send it to the nearest edge location, which then uses optimized AWS backbone networks to transfer data to S3.
+This is particularly beneficial if:
+Your on-premises data center is far from the S3 bucket’s region.
+You need the fastest possible upload speed.
+
+===============================================================================
+Amazon Route 53 geo-proximity routing is a DNS-based routing policy that directs traffic based on the geographic location of your users and resources, and optionally, a bias value to shift traffic toward or away from certain regions.
+Useful when you have multiple endpoints in different regions and want to route users to the nearest one for lower latency.
+
+===============================================================================
+          cost
+Standard-Highest
+Intelligent-Tiering-Slightly lower than Standard
+Standard-IA-Lower
+One Zone-IA-Lower than Standard-IA
+GlacierVery-low
+Glacier Deep Archive-Lowest
+
+===============================================================================
+AWS Direct Connect provides a dedicated, private network connection between your on-premises data center and AWS.
+
+Benefits: High bandwidth, low latency, and consistent performance compared to the public internet.
+Limitation: It does not encrypt traffic by default.
+
+Adding a VPN over Direct Connect ensures encryption for data in transit.
+
+This combination gives you:
+
+Dedicated connection (Direct Connect)
+Encryption (VPN)
+High throughput and low latency
+Perfect for workloads requiring security + performance.
+
+
+==============================================================================
+Option 2: AWS Direct Connect only
+
+While Direct Connect gives you low latency and high throughput, it does not encrypt traffic by default.
+If encryption is a requirement (as stated in the question), Direct Connect alone is not sufficient.
+
+================================================================================
+
+Option 3: AWS Site-to-Site VPN only
+
+VPN provides encryption, but it runs over the public internet.
+This means:
+
+Higher latency
+Lower throughput
+Less predictable performance
+
+
+Not suitable for a company that wants dedicated, low latency, high throughput.
+
+Option 4: AWS Transit Gateway
+
+Transit Gateway is a network hub for connecting multiple VPCs and on-premises networks.
+It does not itself provide a dedicated physical connection.
+You would still need Direct Connect or VPN underneath.
+So, Transit Gateway alone does not meet the requirements.
+
+================================================================================
+
+AWS Global Accelerator: Improves performance for applications (TCP/UDP traffic), not S3 uploads.
+
+================================================================================
+
+Weighted Routing Policy:
+Distributes traffic across multiple resources based on assigned weights.
+Example: Send 70% traffic to one server and 30% to another.
+Not suitable for geo-restriction.
+
+
+Latency-Based Routing Policy:
+Routes traffic to the region with the lowest latency for the user.
+Example: Direct users to the closest server for faster response.
+Not suitable for geo-restriction.
+
+
+Failover Routing Policy:
+Routes traffic to a primary resource unless it’s unhealthy, then switches to a secondary resource.
+Example: Disaster recovery setups.
+Not suitable for geo-restriction.
+
+================================================================================
+S3TA
+There are no S3 data transfer charges when data is transferred in from the internet. Also with S3TA, you pay only for transfers that are accelerated
+
+================================================================================
+Synchronous Replication
+
+Definition: Data is written to the primary database and the replica at the same time. The write operation is considered complete only when both copies are updated.
+Key Characteristics:
+
+Strong consistency: No data loss during failover because both nodes are always in sync.
+Higher latency: Because the primary waits for the replica to confirm the write.
+
+ex: Amazon RDS Multi AZ.
+
+================================================================================
+Asynchronous Replication
+
+Definition: Data is written to the primary database first, and then replicated to the replica later (with a delay).
+Key Characteristics:
+
+Eventual consistency: There can be a lag between primary and replica.
+Lower latency: Faster writes because the primary doesn’t wait for the replica.
+Risk: Possible data loss if the primary fails before replication completes.
+
+ex: amazon RDS read replica
+================================================================================
+AWS Glue DataBrew
+Purpose: Visual, no-code data preparation for datasets in S3.
+
+Features:
+Works with Parquet, CSV, JSON in S3
+Recipes: Track, audit, and share transformation steps
+Data Profiling: Column stats, null counts, distributions
+Analyst-friendly, collaborative workflows
+
+Use Case: Data cleaning, normalization, anomaly filtering, aggregation without writing code.
+
+AWS Glue Studio
+Purpose: Visual interface for designing ETL jobs in AWS Glue.
+Features:
+
+Drag-and-drop canvas for Spark-based jobs
+Good for data engineers, not analysts
+Limited profiling compared to DataBrew
+
+Use Case: Complex ETL pipelines, job orchestration.
+
+Amazon Athena
+Purpose: Serverless SQL query engine for S3 data.
+Features:
+
+Query data in S3 using SQL
+Integrates with Glue Data Catalog
+Requires code (SQL), not visual
+
+
+Use Case: Ad-hoc queries, analytics, reporting.
+
+
+Amazon AppFlow
+Purpose: Data movement between SaaS apps and AWS.
+Features:
+
+Connectors for Salesforce, Slack, Zendesk, etc.
+Basic transformations (field mapping)
+
+Use Case: Sync SaaS data to AWS services.
+===============================================================================
+Network ACLs operate at the subnet level, not at the resource level.
+They are stateless and cannot selectively allow specific EC2 instances to access EFS.
+Security groups are the correct mechanism for resource-level network control because they are stateful and can be applied directly to EFS mount targets and EC2 instances.
+===============================================================================
+
+Compliance retention ≠ active storage
+Data that must be retained for years should be archived, not deleted.
+
+Cold data → cold storage
+Rarely accessed data should be moved to S3 Glacier / Glacier Deep Archive via lifecycle policies.
+
+Never put queryable data in Glacier
+Services like Athena cannot query Glacier or Deep Archive.
+
+Access pattern drives storage class
+Storage choice depends on how often data is accessed, not how important it is.
+
+Lifecycle policies are the default solution
+Prefer S3 lifecycle rules over custom Lambda or scripts for data movement.
+
+Athena pricing is based on data scanned
+Less data scanned = lower cost.
+
+Columnar + compressed formats reduce cost
+Use Parquet or ORC for analytics workloads.
+
+CSV is storage- and query-expensive
+Human-readable ≠ cost-efficient.
+
+Raw vs refined zones have different purposes
+Raw = durability and retention
+Refined = performance and analytics
+
+Optimize both storage cost and query cost
+True cost optimization considers where data lives and how it’s queried.
+
+======================================================================================
+Macie is for data discovery and sensitive data classification, not for enforcing object access. It does not apply or manage S3 access control; it can inform you about sensitive data but doesn’t act as a policy engine.
+
+A role is an identity in AWS that apps/services use to get permissions.
+A policy defines what a role is allowed to do
+An S3 access point is a dedicated entry gate into a bucket with its own rules.
+
+=============================================================================================================
+
+Transit Gateway pricing includes:
+
+Hourly cost for each attachment (per VPC)
+Data processing fee for every GB
+
+Even though TGW is great for scaling, it is:
+
+More expensive than sharing subnets
+Overkill if your goal is “CHEAPEST communication”
+Adds recurring cost that doesn’t exist with RAM sharing
+
+PrivateLink lets one VPC privately access a service in another VPC over AWS’s internal network, using a private IP.
+==============================================================================================================
+
+Select the Availability Zone with the most instances
+From that AZ, select instances using the oldest launch configuration/launch template
+If multiple still match, pick the instance with the earliest launch time (oldest instance)
+If still tied, pick randomly
+closest to the billing hour
+
+============================================
+
+Cross‑region S3 replication with the same encryption key requires KMS multi‑region keys because single‑region keys cannot be used outside their Region.
+AWS does NOT allow converting an existing bucket encrypted with a single‑region KMS key into one encrypted with a multi‑region KMS key.
+
+======================================
+ALB accepts traffic from anywhere on port 443
+EC2 accepts traffic only from ALB’s security group
+RDS accepts traffic only from EC2’s security group on port 5432
+
+=========================================================
+
+The instance may be in Impaired status”
+Meaning:
+EC2 says the instance is unhealthy (hardware, network issue).
+But ASG won’t terminate it unless its own health checks detect failure.
+So ASG may keep a bad instance because it hasn’t marked it unhealthy yet.
+
+===========================================================
+When EC2 is created, ASG waits (default 300 seconds) before checking health.
+If the grace period is still active:
+
+ASG ignores unhealthy state
+ASG will NOT terminate the instance yet
+
+===========================================================
+Aurora
+---------
+Compatible with MySQL and PostgreSQL
+Much faster than standard RDS (up to 5x for MySQL, 3x for PostgreSQL)
+Automatically replicates data across 6 copies in 3 AZs
+Auto-healing storage → no downtime
+Can scale readers instantly for heavy read workloads
+
+===========================================================
+
+Anthena
+----------
+No servers → nothing to manage
+You pay per query only
+Works with S3 files: CSV, JSON, Parquet, Logs
+Great for analytics, reports, logs
+
+=============================================================
+RDS
+-----
+A fully managed service for traditional SQL databases.
+You need a traditional relational database
+But you don’t want to manage backups, patching, failover
+
+============================================================
+DynamoDB
+---------
+A NoSQL key‑value database, fully managed, extremely fast.
+A massively scalable database for apps needing speed and millions of requests.
+Single-digit millisecond latency
+Scales automatically
+Great for serverless apps (Lambda)
+Used by Netflix, Amazon retail, Uber
+============================================================
+AWS Elasticcache
+-------------------
+An in-memory cache service.
+Think of it like:
+Ultra-fast database used for caching data (sub‑millisecond speed).
+Use when:
+Speeding up apps
+Session storage
+Caching database results
+=============================================================
+Amazon Neptune
+----------------
+What it is:
+A graph database.
+Think of it like:
+Database for relationships: friends, connections, maps, social networks.
+Use when:
+Social networks
+Fraud detection
+Recommendation engines
+Knowledge graphs
+============================================================
+Amazon Redshift
+-----------------
+What it is:
+A data warehouse for analytics on huge datasets.
+Think of it like:
+A giant SQL system for analyzing terabytes to petabytes of data.
+Use when:
+You need to analyze huge data
+For dashboards, BI tools, reporting
+
+===========================================================
+=======================================================================
+
+Security Lake is a fully managed service that:
+
+Automatically collects logs from AWS services (CloudTrail, VPC Flow Logs, GuardDuty, etc.) and third-party sources.
+Normalizes data using Open Cybersecurity Schema Framework (OCSF).
+Stores data in Amazon S3 for easy querying with Athena or integration with SIEM tools.
+
+
+Why it fits the question: It meets all requirements with minimal setup and no custom ETL.
+
+=========================================================================
+
+1. Understand the Core Requirements
+
+Minimal code changes → Avoid refactoring the app logic.
+AMQP compatibility → Messaging system must support AMQP protocol.
+High scalability & low operational effort → Managed services preferred over self-hosted solutions.
+
+2. AWS Services for Kubernetes Migration
+
+Amazon EKS → Lets you keep Kubernetes (no major app changes).
+AWS Fargate with EKS → Removes EC2 node management, fully serverless for containers.
+
+
+3. Messaging Options
+
+Amazon MQ → Fully managed broker supporting AMQP, STOMP, MQTT. Ideal for legacy apps needing AMQP.
+SQS/SNS → Great for AWS-native apps, but does NOT support AMQP → would require refactoring.
+Self-hosted RabbitMQ on EC2 → Preserves AMQP but adds heavy operational overhead.
+
+4. Why Other Options Fail
+
+ECS + SNS → SNS doesn’t support AMQP; major code changes needed.
+SQS → Requires refactoring to use AWS SDK and polling logic.
+EC2 + RabbitMQ → High maintenance, scaling complexity, violates “low operational effort.”
+
+==========================================================================
+Amazon Comprehend is a fully managed NLP service:
+
+Detects sentiment (positive, negative, neutral, mixed).
+Extracts entities, key phrases, and topics.
+No custom model training required.
+
+==========================================================================
+
+Amazon Redshift
+
+What it is: A fully managed data warehouse service for running complex SQL queries on large datasets.
+Use case: When you need high-performance analytics on structured data (e.g., millions of rows, BI dashboards).
+When to include:
+
+You have large-scale structured data (after ETL).
+Need fast queries for reporting or analytics.
+Ideal for business intelligence and data warehousing.
+
+AWS Glue
+
+What it is: A serverless ETL (Extract, Transform, Load) service that prepares data for analytics.
+Use case: When you need to clean, transform, and catalog data before analysis.
+When to include:
+
+Data comes from multiple sources in different formats (CSV, JSON, Parquet).
+You need to normalize and prepare data for Redshift, Athena, or S3.
+Automate ETL pipelines without managing servers.
+
+
+Amazon QuickSight
+
+What it is: A business intelligence (BI) and visualization tool.
+Use case: When you need interactive dashboards and reports for decision-making.
+When to include:
+
+After data is in Redshift, Athena, or S3.
+For visualizing trends, KPIs, and insights.
+
+
+ETL (Extract, Transform, Load)
+
+What it is: A process to extract raw data, transform it into a usable format, and load it into a target system (like Redshift or S3).
+When to include:
+
+When raw data is unstructured or semi-structured and needs cleaning.
+When you need consistent schema for analytics.
+Glue is the AWS service for ETL.
+
+
+When to Use These Together
+
+Scenario: You have raw data (e.g., logs, PDFs, JSON) and need analytics dashboards.
+
+Glue → ETL to clean and transform data.
+Redshift → Store structured data for fast queries.
+QuickSight → Visualize insights from Redshift or Athena.
+
+======================================================================================
+Primary DB Instance
+
+Role: Handles all read and write operations for your application.
+Location: In one Availability Zone (AZ).
+Active connection: Your application connects directly to the primary instance.
+Failover: If the primary fails, RDS automatically switches to the standby.
+
+Standby DB Instance
+
+Role: A replica of the primary, kept in sync using synchronous replication.
+Location: In a different AZ for high availability.
+Usage:
+
+Not used for reads or writes (unlike Read Replicas).
+Exists only for failover and durability.
+
+Failover: When primary fails or during maintenance, standby becomes the new primary.
+=======================================================================================
+Why Permission Boundaries Work:
+Acts as a guardrail.
+Developer can attach policies, but cannot exceed boundary limits.
+
+SCP:
+Works at Org/account level, not per user.
+Too broad for this use case.
+
+IAM Policy to deny AdministratorAccess:
+IAM policies grant permissions, not restrict other policies effectively.
+Hard to maintain.
+
+Boundary on Group:
+Not supported; boundaries apply only to users or roles
+
+Best Practice:
+Combine least privilege IAM policies + permission boundaries.
+Use SCP only for organization-wide restrictions.
+
+IAM User – Individual identity for people or apps.
+IAM Group – Collection of users with shared permissions.
+IAM Role – Temporary credentials for AWS services or cross-account access.
+IAM Policy – JSON document defining permissions (Allow/Deny).
+Managed Policy – Predefined AWS policies (e.g., AdministratorAccess).
+Inline Policy – Policy embedded directly in a user, group, or role.
+
+
+Advanced IAM Features
+
+Permission Boundary – Maximum permissions a user/role can have.
+Service Control Policy (SCP) – Org-level guardrails for accounts.
+Resource-based Policy – Attached to resources (e.g., S3 bucket policy).
+Trust Policy – Defines who can assume a role.
+STS (Security Token Service) – Issues temporary credentials.
+
+===========================================================================================
+
+Global Accelerator uses static IPs and routes traffic at the network layer, not DNS.
+This avoids DNS caching issues common on mobile devices.
+You can shift traffic instantly between blue and green environments.
+Provides global performance optimization via AWS edge locations.
+
+==========================================================================================
+Bucket Owner = the person who owns the folder
+If you create the bucket in your AWS account, you are the bucket owner.
+
+Object Owner = the person who uploads the file
+Whoever uploads the file (object) becomes its owner—even if the file goes into someone else’s bucket.
+
+n AWS, ownership controls permissions.
+The bucket owner can control the bucket, but cannot automatically read files uploaded by someone else unless:
+The uploader gives permission (via ACL or policy), OR
+The bucket is set to “Bucket owner enforced” (so the bucket owner automatically owns all files).
+
+=============================================================================================
+
+An ACL is like a permission slip attached to each bucket or object in Amazon S3.
+It tells who can do what with that bucket or object.
+
+=============================================================================================
+
+Spot Instances are the cheapest EC2 option (up to 90% off On-Demand), but they can be interrupted.
+A Spot Fleet is a collection of Spot Instances managed by AWS that:
+
+Distributes your workload across multiple instance types and Availability Zones.
+Automatically replaces interrupted instances.
+Lets you set a target capacity and cost controls.
+
+
+This makes it fault-tolerant and cost-efficient, which matches your requirement:
+Monthly workload
+Runs for 2 hours
+Can be distributed across multiple servers
+Must withstand failures
+Cost optimization
+
+=============================================================================================
+Amazon Aurora Global Database (Correct Answer)
+Designed for global applications.
+Primary region handles writes; up to 5 secondary regions for low-latency reads.
+Replication lag is <1 second → great RPO.
+Failover to another region in <1 minute → great RTO.
+Perfect for your scenario.
+
+Aurora Serverless
+Scales automatically for unpredictable workloads.
+Good for cost optimization, but NOT for global low-latency or multi-region failover.
+RPO/RTO requirements cannot be guaranteed.
+
+Aurora Multi-Master
+Allows multiple writers in one region for high availability.
+Great for regional HA, but does not solve global latency.
+Still single-region → not suitable for worldwide users.
+
+
+Aurora Provisioned Cluster
+Standard Aurora setup in one region.
+Reliable, but high latency for global users and no fast cross-region failover.
+RPO/RTO will be much higher than required.
+===============================================================================================
+SNS is a push service — it pushes messages to:
+
+email
+HTTP endpoints
+Lambda
+SQS queues
+SMS
+You cannot "poll" SNS the way you poll SQS.
+===============================================================================================
+Amazon Kinesis Data Firehose
+
+Fully managed data delivery service.
+Sends stream data to:
+
+S3
+Redshift
+OpenSearch
+Splunk
+
+Best for:
+log ingestion
+analytics pipelines
+data lakes
+
+Not suitable for:
+event-driven processing
+sub-second processing
+per-message replay
+=================================================================================================
+Feature           | Data Lake             | Data Warehouse
+---------------------------------------------------------------
+Data Type         | Raw, all types        | Clean, structured
+Schema            | Schema-on-read        | Schema-on-write
+Cost              | Cheaper storage       | More expensive
+Performance       | Slower                | Fast, optimized
+Use Cases         | ML, exploratory       | BI, reporting
+
+=================================================================================================
+
+AWS Transfer Family (SFTP) provides:
+--------------------------------------
+✔ Fully managed SFTP server
+✔ No EC2, no patching, no maintenance
+✔ Direct upload into S3
+✔ IAM role mapping per user/vendor
+✔ Supports identity provider integration (AD, Cognito, custom, etc.)
+✔ Scalable, secure, production-ready
+
+=========================================================================================
+EC2 Hibernate preserves the in‑memory state (RAM) of the instance when it is stopped.
+That means:
+
+Applications remain loaded in memory
+OS processes remain active
+In-progress tasks are not lost
+On start, the instance resumes instantly, like opening a laptop from sleep mode
+
+⏱️ Startup time becomes seconds, not minutes.
+
+================================================================================
+Aurora lets you create up to 15 read replicas in the same cluster.
+All replicas share the same storage layer but have separate compute nodes.
+Benefits:
+
+Read traffic goes to replicas
+Write traffic stays on the primary writer
+Latency for writes decreases
+Application scales horizontally for reads
+
+================================================================================
+Standby instances exist only for failover, not for dev or read workload.
+Important AWS exam concept.
+Aurora automatically replicates data across multiple Availability Zones.
+Failover is fast and automatic → improves application uptime.
+==============================================================================
+Low latency               → General Purpose
+High concurrency + 
+Big Data + High Throughput → Max I/O
+Want more MB/s for small EFS → Provisioned Throughput
+Default throughput        → Bursting
+
+============================================================================
+RDS snapshots don’t live in S3; they’re managed by RDS.
+You can export data to S3 (for certain engines) but that produces files (e.g., Parquet/CSV), not an RDS snapshot that can be restored as an RDS instance.
+This doesn’t meet the requirement of giving the auditor a DB snapshot they can restore as a full database in their account.
+============================================================================
+SCP
+----
+Applies at the AWS Organizations level
+Affects every principal in the member account
+→ including the root user
+Works as a guardrail: it can only deny, never grant permissions
+============================================================================
+When configuring inbound rules:
+You open the port on the server you are protecting, not the client.
+Therefore:
+
+DB listens on 1433 → SG-B must allow inbound 1433
+Web listens on 443 → SG-A must allow inbound 443
+
+============================================================================
+AWS Storage Gateway is a service that connects your on-premises servers to AWS storage.
+It lets your applications use normal storage protocols (SMB, NFS, iSCSI), while AWS stores the data in the cloud.
+In simple terms:
+Your servers think they are writing to local storage, but the data is actually stored in AWS.
+Storage Gateway has three types:
+
+File Gateway
+Volume Gateway
+Tape Gateway
+
+FILE GATEWAY (Simple Explanation)
+
+File Gateway gives you an NFS or SMB file share.
+Files are actually stored as objects in Amazon S3.
+Good for backups, file uploads, and applications that need file-system access backed by S3.
+
+VOLUME GATEWAY (Simple Explanation)
+
+Volume Gateway gives you a cloud-backed virtual hard disk (iSCSI volume).
+Your server mounts it like a normal disk.
+Data is stored in Amazon S3, with snapshots in EBS.
+Two modes:
+a) Cached volumes: frequently used data stored locally, full dataset in S3.
+b) Stored volumes: full dataset stored locally, backups sent to AWS.
+In simple words:
+Volume Gateway = "Cloud hard disk" presented over iSCSI.
+
+
+TAPE GATEWAY (Simple Explanation)
+
+Tape Gateway emulates tape drives for backup software.
+Data goes into AWS instead of physical tapes.
+Used to replace old tape-based backup systems.
+
+SUPER SIMPLE SUMMARY
+Storage Gateway = A bridge between your local servers and AWS storage.
+File Gateway = Cloud file share (SMB / NFS).
+Volume Gateway = Cloud hard disk (iSCSI).
+Tape Gateway = Cloud tape backup.
+
+
+======================================================================
+ROUTE-53
+
+Route 53 Overview
+
+
+AWS managed DNS service.
+Supports domain registration, DNS routing, and health checks.
+
+
+Hosted Zones
+A. Public Hosted Zone
+
+
+Accessible on the internet.
+Used for websites/services exposed publicly.
+
+B. Private Hosted Zone
+
+Works only inside associated VPCs.
+Requires:
+
+enableDnsSupport = true
+enableDnsHostnames = true
+
+
+NS and SOA records are not used for delegation internally.
+
+
+Routing Policies
+A. Simple Routing
+
+
+One record, one value.
+No health checks.
+
+B. Weighted Routing
+
+Traffic split based on weight.
+Used for A/B testing and gradual migrations.
+
+C. Latency Routing
+
+Routes user to region with lowest latency.
+
+D. Failover Routing
+
+Primary and secondary configuration.
+Uses health checks.
+
+E. Geolocation Routing
+
+Routes based on user geographic location.
+
+F. Geoproximity Routing (Traffic Flow Only)
+
+Routes based on proximity with optional bias.
+
+G. Multivalue Answer Routing
+
+Returns multiple healthy IPs.
+Not a load balancer but increases availability.
+
+
+Alias vs CNAME
+A. Alias
+
+AWS-specific.
+Free DNS queries.
+Works at root domain.
+Can point to AWS resources like ELB, CloudFront, API Gateway, S3 REST endpoint.
+
+B. CNAME
+
+Points a domain name to another domain name.
+Cannot be used for root domain.
+
+Health Checks
+
+Supports HTTP, HTTPS, and TCP checks.
+Can use CloudWatch metrics.
+Required for failover routing.
+Can monitor endpoints inside and outside AWS.
+
+Hybrid DNS (On-Prem + AWS)
+A. Route 53 Resolver Inbound Endpoint
+
+Allows on-prem servers to resolve private hosted zone names.
+
+B. Route 53 Resolver Outbound Endpoint
+
+Allows VPC to resolve on-prem DNS names.
+
+C. Resolver Rules
+
+Domain-based forwarding.
+Used in hybrid network architectures.
+
+Split-Horizon DNS
+
+Same domain can exist in public and private hosted zones.
+Public answers internet queries.
+Private answers VPC queries.
+This is supported and normal.
+
+S3 + Route 53 Notes
+
+Alias supports S3 REST endpoint.
+For S3 static website hosting, use Alias → S3 Website Endpoint (in public hosted zone).
+
+Route 53 Global Nature
+
+Route 53 is a global service.
+Hosted zones are not region-specific.
+=======================================================================
+Databases are not meant for large binary video objects
+Extremely expensive, inefficient, unnecessary
+Not optimal or recommended for video storage
+=======================================================================
+CloudFront is designed for HTTP/HTTPS, but NLBs work at Layer 4 (TCP/UDP).
+A video conferencing platform uses real-time, bi-directional, low-latency traffic—NOT cacheable HTTP objects.
+CloudFront caches static content (HTML, images, videos, JS), but real-time conferencing traffic cannot be cached.
+Even if configured as a TCP pass‑through, CloudFront does not accelerate TCP/UDP traffic globally the way Global Accelerator does.
+CloudFront is built for content delivery, not for reducing latency for live, interactive sessions.
+=======================================================================
+
+ALBs work at Layer 7 (HTTP/HTTPS) 
+NLBs work at Layer 4 (TCP/UDP).
+=======================================================================
+PrivateLink lets your VPC connect to AWS services (like S3, CloudWatch, API Gateway) or third‑party/SaaS services privately.
+No public IPs, no Internet Gateway, no NAT needed.
+A service provider can expose services via VPC Endpoint Services (VPCEs), and customers can connect using Interface Endpoints.
+No need for VPC peering or complex routing configurations.
+=======================================================================
+AWS DataSync is a fully managed data transfer service that helps you move large amounts of data quickly, securely, and automatically between:
+
+On‑premises storage and AWS
+AWS storage services (S3, EFS, FSx, etc.)
+Different AWS Regions or accounts
+DataSync transfers data 10× faster than typical open‑source tools (like rsync).
+
+You can set up:
+
+One-time transfers
+Recurring/scheduled transfers
+Continuous migration workflows
+========================================================================
+AWS Direct Connect is a networking service that lets you create a dedicated, private, high‑bandwidth connection between your on‑premises data center (or office) and AWS—bypassing the public internet entirely.
+========================================================================
+he official way to restrict access to specific IP ranges for a regional or edge-optimized API is by using an API Gateway Resource Policy.
+
+A resource policy allows:
+
+Explicit deny to all IPs
+Explicit allow only specific internal CIDRs
+=================================================
+ALB has a feature called "Authenticate with Cognito".
+
+When enabled:
+ALB becomes the authentication gateway.
+Users hitting the application are redirected to Cognito’s hosted login page.
+ALB verifies the tokens.
+Only authenticated traffic is forwarded to the EC2 servers.
+=================================================
+Cognito User Pools
+
+They are authentication systems (register/login).
+Manage users, passwords, MFA, email/phone, etc.
+Issue JWT tokens (ID token, Access token).
+Used with Web apps + ALB + API Gateway.
+
+User Pools = Who are you?
+
+Cognito Identity Pools
+
+They are authorization systems for AWS resources.
+Provide temporary AWS credentials.
+Used when apps need access to S3, DynamoDB, etc.
+==================================================
+Encrypt a unecrypted DB
+Take a snapshot of the database, copy it as an encrypted snapshot, and restore a database from the encrypted snapshot. Terminate the previous database
+==================================================
+WAF supports:
+
+CloudFront
+ALB
+API Gateway
+AppSync
+Cognito User Pools
+=================================================
+Lambda triggers a CloudFormation template to create the ALB → again introduces 5–10 min delay.
+ALB provisioning time = downtime.
+=================================================
+ACM-issued public certificates are automatically renewed by ACM (assuming proper domain validation remains in place). Monitoring their expiry is less critical because ACM manages renewal for you.
+Imported (third‑party) certificates in ACM are not auto‑renewed by AWS. You are responsible for tracking and renewing them. This makes monitoring crucial.
+
+==================================================
+EC2 Instances Cannot Have Two IAM Roles
+AWS strictly enforces that:
+An EC2 instance can only have ONE IAM role attached at a time.
+You cannot attach multiple instance profiles to an EC2 instance.
+
+The SSM Agent is preinstalled on most modern EC2 AMIs
+Cron‑based patching = fully manual, error‑prone, no compliance reporting
+Not scalable for a fleet of instances
+==================================================
+Detach existing IAM role and create a new combined one
+This is technically feasible, but it is:
+
+Disruptive (role detachment restarts instance profile associations)
+Manually intensive
+Requires modifying production IAM roles, increasing risk
+Not the “least overhead” solution
+
+==================================================
+AWS Systems Manager Quick Setup 
+Zero manual agent installs
+✔ Automatically updates IAM roles
+✔ Configures Patch Manager, Inventory, & Compliance automatically
+✔ Centralized view of patching status
+✔ Minimal configuration effort (a few clicks)
+✔ No disruption to existing workloads
+
+=====================================================
+Snowball Edge Offline device, not online migration
+Transfer FamilySFTP protocol service, not mass migration
+File GatewayHybrid access to S3, not migration tool
+DataSync (Correct)Automated, accelerated online migration to S3, EFS, FSx
+=====================================================
+If your instance has a public IPv4 address, it will not  retains the public IPv4 address after recovery.
+A recovered instance is identical to the original instance, including the instance ID, private IP addresses, Elastic IP addresses, and all instance metadata
+====================================================
+Using VPC sharing, an account that owns the VPC (owner) shares one or more subnets with other accounts (participants) that belong to the same organization from AWS Organizations. The owner account cannot share the VPC itself. Therefore this option is incorrect.
+ A VPC peering connection is a networking connection between two VPCs that enables you to route traffic between them using private IPv4 addresses or IPv6 addresses. Instances in either VPC can communicate with each other as if they are within the same network. VPC peering does not facilitate centrally managed VPCs. Therefore this option is incorrect.
+====================================================
+Make sure the throughput does not exceed 300 messages/sec
+
+FIFO queues support:
+
+300 msg/sec without batching
+3,000 msg/sec with batching
+
+======================================================
+
+VIF 
+----
+
+A Virtual Interface is a logical connection on top of the DX physical link.
+There are 3 types of VIFs:
+a) Public VIF
+Used to access:
+
+S3
+DynamoDB
+All AWS public services with public IPs
+
+b) Private VIF
+Used to access:
+
+VPC resources (via VGW or DXGW)
+EC2, RDS, etc.
+
+c) Transit VIF
+Used to access:
+
+Transit Gateway (TGW)
+
+→ Needed when connecting multiple VPCs via TGW.
+
+==================================================
+Amazon DynamoDB is not a fit for this scenario as each task output is 20 MB but the storage limit for each item in a Amazon DynamoDB table is 400 KB.
+
+=================================================
+ Small filesystem + high concurrency = PROVISIONED
+Large filesystem + unpredictable bursts = BURSTING
+=================================================
+Long polling✅ Reduces API calls → reduces costVisibility timeout❌ Controls message processing timing, NOT costMessage timer❌ Delays visibility, NOT cost reductionShort polling❌ More empty requests → higher cost
+
+Long polling waits up to 20 seconds for a message before returning an empty response.
+This reduces:
+
+API call frequency
+Cost (you pay per request)
+Empty receives
+
+=================================================
+
+AWS WAF cannot be attached to S3.
+WAF works with:
+
+CloudFront
+API Gateway
+ALB
+
+==================================================
+OAI (Origin Access Identity):
+Use OAI to make the S3 bucket private.
+Only CloudFront (via OAI) can read S3 objects → prevents direct S3 access/bypass.
+
+AWS WAF with IP Match:
+Attach AWS WAF to the CloudFront distribution.
+Use an IP allow-list rule to permit only the supplier IP ranges.
+Blocks all other IPs globally at the edge.
+=================================================
+Simple ScalingVery easyCooldown delays scaling❌NoStep ScalingFaster, reacts in stepsStill approximated⚠️ Better but not idealTarget TrackingAuto-calculates exact capacityNone significant✔✔ Best
+=================================================
+
+AWS Shield Advanced is specifically designed for large-scale, sophisticated DDoS attacks targeting:
+
+ALB
+CloudFront
+Route 53
+EC2
+Shield Advanced integrates with:
+
+AWS CloudWatch
+AWS WAF
+VPC flow logs
+Shield event logs
+
+CloudFront helps with Layer 7 attacks.
+Shield Advanced protects all layers.
+
+HTTP APIs cost 70% less than REST APIs.
+==================================================
+NAT Instance = EC2 instance acting as NAT + firewall.
+Because it’s a normal Linux server, you can:
+
+Forward ports
+Build custom routing logic
+Redirect traffic to different backends
+
+A NAT Gateway cannot do this because it’s a managed black box.
+
+==================================================
+Stopping a Spot Instance is not allowed unless the AMI used supports stopping (EBS-backed Hibernation-enabled).
+Even then:
+
+Stopping does not reopen the request.
+Only AWS-triggered interruptions do.
+Cancel request → Instance runs until you terminate it
+Terminate instance → Request still stays active (for persistent requests)
+
+=================================================
+S3 Gateway Endpoint = Free to Use
+
+VPC Gateway Endpoints for S3 cost $0.
+Your traffic stays inside the AWS backbone and you avoid NAT gateway data-processing charges.
+
+
+
+Bypassing the NAT Gateway Saves Money
+
+NAT Gateway charges include:
+
+Hourly cost
+Data processing cost (per GB)
+
+-Egress‑only Internet Gateway is only for IPv6 outbound traffic.
+===================================================
+Since the data is coming from Snowball Edge, AWS lets you import directly into FSx for Lustre, which is faster and cheaper.
+==================================================
+-----------------------------------------------------------------------|------------|---------------------------------------------------------------
+
+SCP affects all users and roles in member accounts, including root     | TRUE       | SCPs restrict every identity in member accounts, even root.
+SCP does NOT affect service-linked roles                               | TRUE       | AWS exempts service-linked roles so services can operate.
+If IAM allows but SCP denies/not allows, user CANNOT perform action   | TRUE       | Effective permission = IAM Allow AND SCP Allow; SCP wins.
+SCP affects service-linked roles                                       | FALSE      | Service-linked roles are excluded from SCP enforcement.
+SCP affects all users EXCEPT the root user                             | FALSE      | Root is affected; only management account root is exempt.
+If IAM allows but SCP denies, user CAN still perform action            | FALSE      | SCP overrides IAM permissions; action is blocked.
+
+-==================================================
+Python support is built-in
+Lambda natively supports Python:
+Python 3.x runtime available
+Just write your code → zip it → deploy
+No need to manage interpreters or environments.
+
+Normal Lambda sometimes has a “cold start” delay.
+Provisioned Concurrency keeps functions pre-warmed.
+This gives:
+Fast, consistent performance
+Useful during peak loads
+Perfect for apps needing low latency
+like healthcare analytics
+==================================================
+
+Statement                                                                                                   | True/False                | Explanation
+-----------------------------------------------------------------------|------------|---------------------------------------------------------------
+You can share an AMI with another AWS account                          | TRUE                            | AMIs can be shared across accounts; encrypted AMIs need KMS.
+Copying encrypted AMI cannot result in unencrypted snapshot            | TRUE       | AWS forbids removing encryption during copy.
+Copying encrypted AMI results in unencrypted snapshot                  | FALSE      | Security rules prevent encrypted→unencrypted copies.
+You cannot share an AMI with another AWS account                       | FALSE      | Sharing is supported (with restrictions).
+You can copy an AMI across AWS Regions                                 | TRUE       | AWS fully supports cross-region AMI copying.
+You cannot copy an AMI across AWS Regions                              | FALSE      | Cross-region AMI copy is allowed.
+
+=================================================
+
+CloudFormation Templates → Just the design (blueprint)
+CloudFormation Stacks → Deploy the template (but only in ONE account/region)
+CloudFormation StackSets → Deploy SAME template to MANY accounts & MANY regions
+AWS RAM → Shares resources, does NOT deploy resources
+
+=================================================
+Amazon API Gateway + Usage Plans + API Keys    +Rate Limiting + throttling etc.... | YES      | Provides built‑in per-client rate limiting, throttling, and quotas
+=================================================
+When you upload objects using SSE‑S3, Amazon S3:
+Generates a unique data key per object
+Encrypts the object with that key
+Then encrypts the data key itself with a master key that S3 manages
+
+SSE‑KMS can encrypt each object with a unique key
+BUT it comes with:
+Higher cost (KMS request charges)
+More operational overhead
+Need to manage KMS policies and encryption contexts
+===================================================
+
+CloudFront supports HTTP/HTTPS (Layer 7). It cannot proxy or accelerate UDP traffic.
+The requirement is UDP → CloudFront is incompatible.
+
+AWS Global Accelerator is correct
+
+Protocol support: Supports TCP and UDP traffic for any port.
+Performance: Uses Anycast IPs at AWS edge locations and routes client traffic onto the AWS global backbone as close to the user as possible, reducing Internet last-mile variability.
+Consistency: Improves latency, jitter, and availability for real-time applications, which is ideal for live sports results over UDP.
+==================================================
+
+Option                     | Correct? | Explanation
+---------------------------|----------|---------------------------------------------------------------
+ElastiCache                | ❌        | Reduces read load but does NOT fix replication lag; requires code changes.
+EC2 MySQL                  | ❌        | More management overhead and still suffers from the same MySQL replication limits.
+DynamoDB                   | ❌        | Requires a complete application rewrite; not minimal effort.
+Aurora MySQL              | ✅        | Fixes replication lag with shared storage, minimal code changes, highly scalable, best performance.
+
+====================================================
+
+Both these options talk about creating a read replica that synchronously replicates the data, but in reality, any updates made to the primary DB instance are asynchronously copied to the read replica. So both these options are incorrect.
+Multi‑AZ creates a standby (not readable) in another AZ using synchronous replication for high availability and minimal data loss.
+
+Multi-AZ (for RDS MySQL) uses synchronous replication
+This means:
+
+Primary writes → Secondary writes at the same time
+The write is acknowledged only after both copies succeed
+Databases are fully in sync
+Zero or near-zero data loss (RPO ≈ 0)
+Automatic failover to the standby node in case of outage
+
+=====================================================
+Scaling EC2 instances in the ECS cluster does NOT increase ECS tasks
+More EC2 instances ≠ more containers
+You still have the same number of tasks → same bottleneck
+
+You first need to scale ECS service (tasks), not EC2 capacity.
+=======================================================
+
+Security Groups are stateful, so allowing inbound traffic to the necessary ports enables the connection. Network ACLs are stateless, so you must allow both inbound and outbound traffic
+
+========================================================
+Kenisis Data Firehose is delivery-only, NOT a processing engine.
+
+It can:
+Receive streaming data
+Automatically deliver it to:
+
+S3
+Redshift
+OpenSearch
+Splunk
+it->
+Cannot build custom real-time applications
+No consumer applications
+No manual reading of the data
+No replaying or reprocessing
+Limited transformation (only Lambda-based lightweight transforms)
+=====================================================
+S3 is NOT suitable for:
+
+Frequent small writes
+Updating existing files
+Real-time file operations
+Low-latency storage
+
+=====================================================
+
+Service         | EFS Supported? | Needs EC2?
+------------------------------------------------
+ECS Fargate     | YES            | NO
+AWS Lambda      | YES            | NO
+EKS Fargate     | YES            | NO
+EC2 Instances   | YES            | Optional
+===================================================
+When Cross‑Zone Load Balancing is DISABLED
+
+2 AZs → each gets 50% of the total traffic
+AZ‑A has 1 instance → gets all 50%
+AZ‑B has 4 instances → split the other 50% equally
+
+ When Cross‑Zone Load Balancing is ENABLED
+
+ Outcome when cross-zone load balancing is ENABLED:
+
+1 instance in AZ‑A → 20%
+Each of 4 instances in AZ‑B → 20% each
+
+=================================================
+Feature / Option                                                 Suitability                                                Why / Why Not                                               Example
+----------------------------                             ----------------------------------------              -------------------------------------------             -----------------------------------------------
+DynamoDB Point-in-Time Recovery (PITR)   YES           Continuous backups; restore to any second within 35 days.   Restore table to 12:00:14 if corruption at 12:00:15.
+DynamoDB On-Demand Backup                                NO            Manual snapshot only; cannot restore to exact moment.        Backup at 10 AM; corruption at 2 PM → lost 4 hours of data.
+DynamoDB Streams                                                    NO            Requires custom replay logic; not automatic recovery.        Use Lambda to rebuild items manually from stream logs.
+Global Tables                                                           NO            Corrupted data replicates to all regions immediately.        Corrupt write in Region A appears instantly in Region B.
+
+
+================================================
+
+EBS Volume Type                            | Backing Storage                           | Use Case                                                     | Max IOPS/Volume | Max Throughput | Notes
+-----------------------------                     |-----------------|               --------------------------------------------------------------|------------------|-----------------|---------------------------------------------------------------
+Provisioned IOPS SSD (io1)    | SSD             | Critical, I/O‑intensive DBs & apps                           | 64,000           | 1,000 MB/s      | Up to 50 IOPS/GB; supports 25,000 IOPS requirement
+General Purpose SSD (gp2)      | SSD             | General workloads, dev/test, boot volumes                   | 16,000           | ~250 MB/s       | Burst-based; cannot meet 25,000 IOPS
+Cold HDD (sc1)                               | HDD             | Infrequently accessed, cold datasets                        | 250              | ~250 MB/s       | Lowest cost; not suitable for high performance
+Throughput Optimized                HDD (st1)| HDD            | Large, sequential, throughput-heavy workloads (ETL, Kafka)  | 500              | ~500 MB/s       | Not IOPS-focused; cannot meet 25,000 IOPS
+
+===============================================
+EventBrideg
+----------------
+
+Amazon EventBridge is a serverless event bus that lets AWS services, custom applications, and SaaS products communicate using events.
+Think of it like a smart router for events:
+
+It listens for events happening in AWS or your applications.
+It matches them against rules.
+It routes them to targets (Lambda, SQS, Step Functions, SNS, etc.) automatically.
+
+No polling. No manual wiring. Fully event‑driven.
+
+===============================================
+
+
+Traffic is routed to instances using the primary private IP address specified in the primary network interface for the instance
+
+===============================================
+S3 Batch Operations are used for bulk operations on objects:
+
+Copying objects
+Tagging objects
+Running Lambda on objects
+Restoring Glacier archives
+
+
+They do NOT reduce data‑transfer cost, because:
+
+Website traffic is from users, not internal batch operations
+Batch Operations do not help with HTTP GET requests from the public
+
+===================================================
+When launching EC2 instances, the “closest” tenancy setting always wins — and the order of precedence is:
+Launch Template → Subnet → VPC (lowest priority)
+
+===================================================
+Use Availability Zone IDs (like usw2-az1, usw2-az2, usw2-az3)
+AZ IDs are consistent across accounts.
+Example:
+
+In Account A: “us-west-2a” → AZ ID: usw2-az1
+In Account B: “us-west-2c” → AZ ID: usw2-az1
+
+Even though the names differ, the AZ ID matches, which means they are physically the SAME AZ.
+So you launch into the subnet whose AZ ID matches across both accounts.
+
+====================================================
+You can only use EC2 automatic recovery (triggered by a CloudWatch alarm) if the instance uses EBS-backed root volume.
+So the correct statement is:
+Configure CloudWatch alarm → automatic instance recovery → instance must be EBS-backed.
+
+Instance store volumes are physically attached to the EC2 host.
+If the physical hardware fails:
+data is lost
+volumes cannot be moved
+instance cannot be recovered
+
+=====================================================
+An EC2 host is the physical server in an AWS data center on which your EC2 virtual machine (instance) actually runs.
+Think of it like this:
+EC2 Instance = Your virtual machine
+EC2 Host = The physical machine underneath it
+
+Instance Store lives on the EC2 host
+If an instance type supports instance store (ephemeral storage), that storage physically lives on the host.
+So if the host fails → instance store data is lost
+===================================================
+GuardDuty is a threat detection service.
+It monitors for:
+unusual S3 access
+brute‑force attempts
+suspicious IAM activity
+compromised credentials
+malicious IPs or threat‑intel events
+data exfiltration from S3
+
+Macie is a data classification and protection service.
+Macie scans and identifies:
+PII (Personally Identifiable Information)
+PCI (credit card data)
+secrets, passwords
+financial records
+health records
+customer data
+
+========================================================
+
+| Category          | Mode / Item           | Description                                                                                                                        |
+| ----------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Performance Modes | General Purpose       | Lowest latency; default mode; suitable for most workloads; One Zone supports this mode but without the same performance guarantees |
+| Performance Modes | Max I/O               | Designed for highly parallel workloads; higher latency than General Purpose; supported only for Regional file systems              |
+| Performance Modes | Recommendation        | AWS recommends using General Purpose for all file systems due to high per-operation latency of Max I/O                             |
+| Throughput Modes  | Bursting (Default)    | Throughput scales with file system storage size; suitable for general workloads                                                    |
+| Throughput Modes  | Provisioned           | Specify exact throughput regardless of file system size; useful when throughput needs are predictable or exceed burst limits       |
+| Throughput Modes  | Elastic (Recommended) | Automatically adjusts throughput; supports unpredictable or spiky workloads; provides up to 10x burst                              |
+| Throughput Notes  | Read Throughput       | Read and write throughput combined can reach 100%; maximum supported write throughput is 67%                                       |
+| Throughput Notes  | Monitoring            | Throughput Utilization metric in CloudWatch helps track usage                                                                      |
+| Choosing Modes    | Elastic               | Recommended for unpredictable or spiky workloads                                                                                   |
+| Choosing Modes    | Provisioned           | Use when throughput needs are known, consistent, or exceed peak-to-base ratio of 5%                                                |
+| Choosing Modes    | Bursting              | Default option; best when workload grows proportionally with storage size                                                          |
+| Important Note    | Max I/O Latency       | Max I/O has high per-operation latency; AWS recommends General Purpose mode                                                        |
+| Monitoring Tool   | CloudWatch Metric     | PercentIOLimit metric helps track when workloads reach I/O limits under General Purpose mode                                       |
+
+=========================================================================
+
+S3-managed keys do not support customer-visible automatic key rotation.
+S3-managed keys use AWS-owned, internal keys, not AWS-managed keys like KMS CMKs.
+You cannot enforce or track 12‑month key rotation for SSE‑S3.
+Compliance often requires customer-managed KMS CMK rotation logs, which SSE-S3 cannot provide.
+
+==========================================================================
+Cognito is NOT meant to be the identity source for workforce (employee) access
+❌ Cognito identity pools are built for application identity, not multi‑account AWS access
+❌ No native integration with AWS Organizations/IAM Identity Center
+❌ Requires custom OIDC federation setup, custom policies, custom sync processes
+
+Centralized access management across multiple AWS accounts
+→ Use IAM Identity Center (previously AWS SSO)
+2. Integrating AWS with existing on‑prem Active Directory
+→ Use AWS Directory Service for Microsoft AD (Enterprise Edition)
+→ Establish AD Trust Relationships
+3. Avoiding duplicate identity stores
+→ Must use existing AD identities
+4. Least operational overhead
+→ No custom sync
+→ No self‑managed LDAP
+→ No client-side federation logic
+
+==============================================================
+
+S3 Transfer Acceleration is designed for:
+
+long-distance uploads from clients over the internet
+improving upload speeds via CloudFront edge network
+
+It does NOT accelerate:
+
+region-to-region transfers
+bucket-to-bucket copies inside AWS
+internal S3 operations
+
+===========================================================
+Copy data using aws s3 sync
+✔ Works across Regions
+✔ Efficient for one-time transfers
+✔ Uses S3 APIs (CopyObject / Multipart Copy)
+✔ No need for on-prem infrastructure
+✔ Can run in EC2 within AWS Region → avoids bandwidth issues
+This is the most common method for one-time cross‑Region copies.
+
+2. Set up Amazon S3 Batch Replication and then delete it
+✔ Built specifically for bulk, one-time replication
+✔ Can retroactively copy existing objects
+✔ Handles 1 PB scale automatically
+✔ Does NOT require continuous replication—you can delete config afterward
+✔ Uses internal AWS backbone → very fast and reliable
+============================================================
+Trusted Advisor is a tool that provides best‑practice recommendations across several categories:
+
+Cost Optimization
+Performance
+Security
+Fault Tolerance
+Service Limits
+
+What it does:
+
+Warns you about idle Amazon RDS instances
+Warns you about underutilized EC2 instances
+Suggests unused or low‑utilization EBS volumes
+Alerts you if your Reserved Instances (RIs) are expiring soon
+
+============================================================
+Trusted AdvisorFinds idle RDS & EC2; cannot auto-renew RIs❌ Incorrect
+Compute OptimizerRight‑sizes EC2 & suggests purchasing models❌ Misrepresented
+S3 Storage Class Analysis + LifecycleMoves S3 objects to cheaper storage✔ Valid but does not address EC2/RDS
+Cost Optimization Hub + Compute OptimizerIdentifies idle EC2 and gives right‑sizing recommendations✔ Correct Answer
+
+==============================================================
+You can set up Amazon CloudFront with origin failover for scenarios that require high availability. To get started, you create an origin group with two origins: a primary and a secondary. If the primary origin is unavailable or returns specific HTTP response status codes that indicate a failure, CloudFront automatically switches to the secondary origin.
+
+Use field level encryption in Amazon CloudFront to protect sensitive data for specific content
+Field-level encryption allows you to enable your users to securely upload sensitive information to your web servers. The sensitive information provided by your users is encrypted at the edge, close to the user, and remains encrypted throughout your entire application stack. 
+============================================================
+
+Network Load Balancer is the ONLY AWS load balancer that supports static Elastic IPs
+✔ You can attach one Elastic IP per AZ
+✔ Those IPs never change
+✔ Bank can whitelist them
+✔ You can still use Auto Scaling under the NLB
+
+============================================================
+RDS PostgreSQL supports IAM Token Authentication
+It issues temporary tokens valid for only 15 minutes
+No passwords stored in Lambda code
+Maximum security
+This is required for IAM authentication to work.
+Why?
+Because to use IAM DB authentication, Lambda must:
+-
+Assume an IAM role
+Call the RDS service to generate temporary auth token
+Use that token to connect to your RDS PostgreSQL DB
+=============================================================
+CLUSTER PLACEMENT GROUP
+Packs EC2 instances close together, often on the same rack.
+Provides the highest network throughput.
+Lowest network latency.
+Best for high-performance computing, big data, analytics, and distributed systems.
+This is the correct choice for maximum performance.
+---
+SPREAD PLACEMENT GROUP
+Places each instance on different racks.
+Used for high availability and fault isolation.
+NOT for performance.
+More distance = worse network performance.
+Wrong for this question.
+---
+PARTITION PLACEMENT GROUP
+Divides instances into partitions.
+Used for large distributed systems like Kafka, Cassandra, HDFS.
+Focuses on failure isolation, not maximum network speed.
+
+===========================================================
+Wildcard certificates only cover subdomains of ONE domain
+
+*.mycorp.com → covers:
+✔ checkout.mycorp.com
+✔ www.mycorp.com
+But it does NOT cover:
+✘ yourcorp.com (different domain)
+✘ yourcorp.com/profile (requires certificate for yourcorp.com)
+Wildcard does not cover root domains unless explicitly added.
+ [docs.aws.amazon.com], [ssldragon.com]
+
+2. Your requirement is multi-domain, not multi-subdomain
+You need certificates for:
+
+checkout.mycorp.com
+www.mycorp.com
+yourcorp.com
+
+A wildcard cannot secure two different domains.
+You would still require multiple certs.
+
+✅ Point‑wise: Why SNI is the correct minimal‑effort solution
+1. ALB supports multiple certificates on a single HTTPS listener
+You add:
+
+Cert for checkout.mycorp.com
+Cert for www.mycorp.com
+Cert for yourcorp.com
+
+ALB automatically selects the correct certificate using SNI.
+
+=============================================================
+Create Golden AMI✔ CorrectRemoves long installation time
+User data for dynamic parts✔ CorrectFast tweaks at boot
+===========================================================
+Snowball is meant for bulk, offline, physical data transfer
+Snowball is designed for:
+
+Migrating tens of TBs to petabytes
+Data center migrations
+Large archival transfers
+Environments with poor or no network connectivity
+===========================================================
+Amazon DynamoDB stream is an ordered flow of information about changes to items in a DynamoDB table. When you enable a stream on a table, DynamoDB captures information about every modification to data items in the table. Whenever an application creates, updates, or deletes items in the table, DynamoDB Streams writes a stream record with the primary key attributes of the items that were modified. A stream record contains information about a data modification to a single item in a DynamoDB table. DynamoDB Streams cannot address the hotkey issue.
+
+===========================================================
+https://youtube.com/shorts/CrItRjHIIeY?si=nA9MmakrYgKg90tV
+
+============================================================
+Because cached volumes:
+
+keep hot data locally
+store the full dataset in S3
+require almost no application changes
+avoid retrieval fees
+optimize bandwidth
+deliver a true hybrid storage experience
+
+S3 Standard-IA charges retrieval fees → violates requirement:
+✔ “avoid retrieval fees or delays when accessing cloud data”
+Requires application reconfiguration because on-prem apps don’t automatically access S3 buckets
+DataSync is batch or scheduled, not real‑time — not suitable for medical records needed instantly
+
+==========================================================
+ Amazon SQS — durable, pull-based job queue with built-in retry controls (visibility timeout, DLQs).
+✅ Amazon EC2 Spot Instances — cheapest compute option for batch, interrupt-tolerant processing.
+
+==========================================================
+All cross‑AZ traffic goes through the AWS backbone to reach the mount target.
+Cross‑AZ network hops add extra latency.
+HPC workloads (frequent reads/writes, tightly coupled compute) are very latency‑sensitive.
+More cross‑AZ traffic = higher cost and potential bottlenecks.
+
+EC2 instances cannot serve as mount targets.
+EFS mount targets are managed AWS infrastructure, not something you can host yourself.
+
+EFS File System = The shared storage (like a network drive)
+Mount Target = A network endpoint inside each AZ that EC2 instances connect to
+Think of it like:
+
+EFS filesystem = a single shared storage system for the whole region
+Mount targets = “access doors” to that storage, one door per Availability Zone
+==========================================================
+Compliance mode
+--
+mmutability enforced
+No one (even root) can delete or overwrite
+Still in S3 Standard → immediate access
+Meets audit & regulatory access requirements
+
+Governance mode
+--
+-root or user with specified previledges can delete the buckets
+========================================================
+Use VGW when:
+
+You have a Site‑to‑Site VPN
+You have Direct Connect
+You want on‑prem ↔ AWS VPC connectivity
+You don’t need a huge multi‑VPC, multi‑region network
+
+
+🟥 When NOT to use VGW
+Use Transit Gateway instead if:
+
+You have MANY VPCs
+You need cross‑region routing
+You want scalable, centralized routing
+You want ECMP for higher VPN throughput
+======================================================
+Amazon ElastiCache for Redis is a fully managed, in-memory data store that offers sub-millisecond latency for read and write operations. It is ideal for workloads that involve frequent, short-lived data interactions, such as tracking a user's changing GPS coordinates in real time. Instead of hitting the Amazon RDS for PostgreSQL database for every update or query, the application can cache these values temporarily in Redis.
+=========================================================
+Correct Answer: Multi‑AZ with Automatic Failover
+This is the ONLY option that provides BOTH of these:
+✔ Minimal downtime
+If the primary Redis node fails, ElastiCache automatically promotes a replica to primary within seconds.
+✔ Minimal data loss
+Replication is near real‑time, so the failover node has almost all recent data.
+✔ Fully managed + best performance
+AWS handles failover orchestration, health checks, and syncing.
+
+Redis natively supports geospatial data types and commands like GEOADD, GEORADIUS, and GEODIST, making it a perfect fit for storing and querying latitude and longitude data. This means the app can quickly retrieve all drivers within a radius of a user without putting pressure on the relational database.
+
+To maintain data freshness and avoid memory bloat, a TTL (Time To Live) policy can be used on each cache entry—ensuring that each player's location automatically expires after, say, 30 seconds unless refreshed. This TTL-based eviction strategy helps keep the dataset current while minimizing the Redis memory footprint.
+
+==================================================
+How do you encrypt the network traffic going from EC2 → RDS?
+(like usernames, passwords, queries, results)
+This is NOT about:
+
+blocking SSH
+access control
+IAM authentication
+KMS encryption (that’s for data at rest)
+
+It’s specifically about encrypting the network connection itself.
+
+-> so it can be done by configuring the RDS to use SSL for data in transit(password, credintials)
+
+=================================================
+Amazon EventBridge is recommended when you want to build an application that reacts to events from SaaS applications and/or AWS services. Amazon EventBridge is the only event-based service that integrates directly with third-party SaaS partners. Amazon EventBridge also automatically ingests events from over 90 AWS services without requiring developers to create any resources in their account.
+
+=====================================================
+Amazon Aurora PostgreSQL Serverless v2 cluster t Aurora I/O optimised
+----
+
+✔ Automatically scales I/O
+No need to provision IOPS.
+No worrying about storage throughput.
+No performance drop during spikes.
+✔ No I/O charges
+You pay a flat storage rate, NO per‑I/O cost.
+This is huge during traffic spikes, because Aurora Standard charges per I/O.
+✔ Extremely low-latency, high throughput
+Designed specifically for:
+
+bursty workloads
+heavy read/write operations
+unpredictable events
+serverless clusters (like the one in the scenario)
+==============================================================
+Aurora does not even support magnetic storage
+Magnetic = super old S3-backed EBS storage
+
+Aurora does not use io1 volumes
+io1 is for RDS on EC2, not Aurora
+
+Aurora doesn’t use gp2 storage like RDS
+Aurora uses its own distributed storage layer
+gp2 does not auto-scale IOPS sufficiently for bursty workloads
+gp2 performance depends on volume size → not ideal for sudden spikes
+
+===============================================================
+EventBridge also only captures new S3 object events, not existing historical files.
+It cannot stream data from existing S3 content.
+Still relies on Lambda (not suitable for large or continuous data streaming).
+
+===============================================================
+Kubernetes Cluster Autoscaler
+
+It detects pending (unschedulable) pods
+It talks directly to the Auto Scaling Group (ASG)
+It automatically adds more EC2 nodes
+When nodes are underutilized, it removes them
+It is a fully supported, standard, low‑overhead solution for EKS
+==============================================================
+API Gateway caching:
+
+Caches entire API responses
+Reduces calls to Lambda + Aurora
+Requires zero code changes
+Cache TTL can be set to 24 hours
+Reduces latency dramatically
+Lowers Aurora request volume and cost
+Adding read replicas:
+--
+Increases Aurora instances → increases cost
+You pay for each replica separately
+More replicas = higher cost, not lower
+===============================================================
+Leverage Amazon Kinesis Data Streams to capture the data from the website and feed it into Amazon Kinesis Data Analytics which can query the data in real time. Lastly, the analyzed feed is output into Amazon Kinesis Data Firehose to persist the data on Amazon S3
+
+================================================================
+Geoproximity routing lets Amazon Route 53 route traffic to your resources based on the geographic location of your users and your resources. You can also optionally choose to route more traffic or less to a given resource by specifying a value, known as a bias. A bias expands or shrinks the size of the geographic region from which traffic is routed to a resource.
+================================================================
+Enabling deletion protection on DynamoDB tables is the most effective, proactive, and low-overhead approach to prevent accidental table deletion. This feature is designed specifically to avoid destructive actions like the one that caused the outage in the scenario
+=================================================================
+Amazon MQ is a managed message broker service for Apache ActiveMQ that makes it easy to set up and operate message brokers in the cloud. Message brokers allow different software systems–often using different programming languages, and on different platforms–to communicate and exchange information.

@@ -1,0 +1,41 @@
+Computer Network for Devops
+=======================================
+OSI model
+
+Application Layer -> HTTPS/HTTP        ------------
+Presentation Layer -> Syntax,Securoty  ------------  Software layer
+Session Layer->API,Socket              ------------
+Transport Layer->TCP                   ------------
+Network Layer->Packets    -------
+Data Link layer->Ethernet -------  hardware
+Physical Layer            -------
+
+
+internet gateway -> connects internet with the instances in the public subnet with the use of route tables
+NAT ->helps connecting instances in the public subnet to the instances in the private subnet
+concept of CIDR 
+ 1. its a range of subnets address 
+    example : if a domain needs only 256 ipaddresses 
+    - take the ipaddress : 172.16.0.0 -> 172.16.255.255  (its the range assume)
+    - we can represent it as 172.16.0.0/24  --> CIDR   why? --------.--------.--------,-------- (8*3=24 -> first 3 can be common as we need only 256(done by     last one itself)
+    - eg. 172.16.0.1,172.16.0.2,172.16.0.3,172.16.0.4,172.16.0.5,172.16.0.6 ,………………………,172.16.0.255 -> enough
+
+ 2. formula to calculate the number of ips can be created
+    example : 172.16.0.0/24  
+                - 32-24=8
+                - 2^8 -- 256 ips can be created!!
+
+ 3. jumps in CIDR block by taking the example of /26
+     -32-26 = 2^6=64(jump value -> this value decides the number of subnets ranges we get --> 4 in this example)
+      -10.0.0.0 -> 10.0.0.63
+      -64->127
+      -128->191
+      -192->255
+ 4. therefore 
+    - /24 -> 1 subnets ranges
+    - /25 -> 2 subnet ranges
+    - /26 -> 4 """
+    ……………………………………… so on in pow(2)
+Note:
+CN,GIT interview questions
+

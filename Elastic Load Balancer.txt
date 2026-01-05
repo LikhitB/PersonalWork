@@ -1,0 +1,5 @@
+-First we need to check the subnets ,ASG available if not we need to create them.
+-Security groups with correct inbound and outbound rules
+-then  we need to create ELB which should associate with these security groups
+-make sure you create ELB in the integration section of the ASG if not then the relaunched instance will not be updated in the target groups which results  in      503 error
+-we can access the instances by the use if DNS of ELB

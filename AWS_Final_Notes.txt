@@ -1,0 +1,695 @@
+AWS IAM and EC2 Notes
+
+IAM
+----
+IAM Policies consist of:
+1. Version
+2. Id
+3. Statement
+   i. Sid
+   ii. Effect -> Allow/Deny
+   iii. Principal -> account/user/role to which this policy is applied
+   iv. Actions -> list of actions this policy allows/denies
+   v. Resource -> list of resources to which it is applied
+
+IAM Password Policy:
+1. Allow all users to change their own passwords
+2. Require users to change their password after some time
+3. Prevent password reuse
+
+Ways to Access AWS:
+1. AWS Management Console -> protected by MFA
+2. AWS CLI -> protected by access keys
+3. AWS SDK -> protected by access keys
+
+Access Key has 2 parts:
+1. Access Key ID
+2. Secret Access Key
+
+AWS CloudShell:
+- Inbuilt terminal acting as CLI in AWS
+
+AWS Policy:
+- Attached to AWS roles which are assigned to a service
+
+IAM Security Tools:
+1. IAM Credential Report (account level) -> lists all users and status of credentials
+2. IAM Access Advisor (user level) -> shows service permissions granted and last accessed
+
+EC2
+----
+Sizing and Configuration Options:
+1. Two types of storage space:
+   i. EBS & EFS -> network
+   ii. EC2 Instance Store -> local to EC2
+2. Firewall rules can be set using Security Groups
+3. Bootstrap Script -> EC2 user data for create/update on first launch
+
+Types of EC2 Instances:
+1. Example: m5.2xlarge -> m(instance class), 5(generation), 2xlarge(size)
+2. General Purpose -> diverse workloads (e.g., web servers, code repos) e.g., t2.micro
+3. Compute Optimized -> compute-intensive tasks (batch processing, gaming servers, ML)
+4. Memory Optimized -> large datasets in memory, high-performance DBs, real-time big data
+5. Storage Optimized -> storage-intensive tasks (OLTP, NoSQL DBs, data warehousing)
+
+Security Groups:
+- Firewalls on EC2 instances
+- Regulate:
+  1. Access to ports
+  2. Authorized IP ranges
+  3. Inbound (blocked by default) and outbound (authorized by default) traffic
+  4. Only allow rules can be set
+  5. Can be attached to multiple instances
+
+Placement Groups:
+1. Cluster -> low latency, fast inter-instance communication
+2. Spread -> spans across AZs, limited to 7 instances per AZ
+3. Partition -> 7 partitions per AZ, each with many instances
+
+Elastic Network Interface (ENI):
+- Network component of VPC representing a virtual network card
+- Consists of:
+  1. Primary private IPv4 address
+  2. Secondary private IPv4 addresses
+  3. Elastic IP address per private IPv4
+  4. Security groups
+  5. MAC address
+  6. Source/destination check flag
+- Types: Primary and Secondary
+
+EBS Volumes:
+1. Bound to a specific AZ
+2. Mounted to one instance at a time (multiple volumes per instance)
+3. Use snapshots to move between AZs
+4. deleteOnTermination enabled by default
+5. Snapshots -> backup for transfer
+6. Snapshot Archives -> 75% cheaper, restore in 24-72 hrs
+7. Force Snapshot Restore (FSR) -> costly, forceful init
+
+AMI:
+1. Built in specific region
+2. Launch EC2 from:
+   i. Public AMI (AWS provided)
+   ii. Own AMI
+   iii. AWS Marketplace
+3. Building AMI creates EBS snapshots
+
+EC2 Instance Store:
+1. High performance hardware disk
+2. Better I/O performance
+3. Storage lost if instance is stopped
+
+Types of EBS Volumes:
+- Characterized by size/throughput/IOPS
+- gp/io types are boot volumes(the are the type of EBS volumes which contains OS in it , opposite to the Data Volume(sc1 and st1))
+- 6 types:
+  1. gp2/gp3 (SSD) -> general purpose, small DBs
+     - gp2: 3 IOPS/GB, 250 Mbps throughput, size dependent
+     - gp3: 3000 IOPS baseline, 1 Tbps throughput, size independent
+  2. io1/io2 Block Express (SSD) -> mission critical, large DBs
+     - io1: 64K IOPS, independent of storage
+     - io2: 256K IOPS, 1000:1 IOPS:GB ratio
+     - Multi-attach: up to 16 EC2 instances
+  3. st1 (HDD) -> big data, data warehousing, high throughput
+  4. sc1 (HDD) -> infrequent access, backups, archives
+
+EBS Encryption:
+- Encrypting EBS volume provides:
+  1. Data at rest encryption
+  2. Data in flight encryption
+  3. Encrypted snapshots
+  4. Encrypted volumes
+  5. Create encrypted snapshot from unencrypted by copying
+
+EFS:
+1. Works with EC2 in multi AZ
+2. Uses NFS protocol
+3. Uses security groups for access control
+4. Compatible with Linux AMIs
+5. Performance Classes:
+   - EFS Scale
+   - Performance Mode: General Purpose, Max I/O
+   - Throughput Mode: Bursting, Provisioned, Elastic
+6. Storage Classes:
+   - Standard -> frequent access
+   - Infrequent Access (EFS-IA) -> lower storage cost, retrieval cost
+   - Archive -> rarely accessed, 50% cheaper
+   - Lifecycle policies to move files between classes
+
+EBS vs EFS:
+1. EBS:
+   - Attached to one instance (except io1/io2 multi-attach)
+   - Locked to AZ
+   - Migration via snapshots
+   - Root volumes terminated with EC2 instance
+2. EFS:
+   - Mount to hundreds of instances across AZs
+   - Linux only
+   - Share website files
+
+
+AWS S3
+-------------
+1. Object Values
+   - Content of the body
+   - Max object size: 5TB
+   - S3 buckets are regional level
+   - Object has a key (full path of the file)
+
+2. Security
+   - IAM Policies
+   - Resource-Based
+     - Bucket Policies
+     - Object Access Control List
+     - Bucket Access Control List
+   - IAM principal can access an S3 object if IAM permissions allow or resource policy allows and there's no explicit deny
+   - Encrypt object using S3
+
+3. S3 Bucket Policies
+   - Resources: Bucket and objects
+   - Effect: Allow/Deny
+   - Actions: Set of API to allow or deny
+   - Principal: Account or user the policy must apply to
+   - Cross-account access can be set using bucket policies
+
+4. Amazon S3 Replication
+   - Enable versioning in source and destination buckets
+   - CRR (Cross Region Replication) and SRR (Same Region Replication)
+
+5. S3 Storage Classes
+   - S3 Standard: Frequently accessed data, low latency, high throughput
+   - S3 Infrequent Access
+     - Standard IA: Disaster recovery backups
+     - One Zone IA: Secondary backup copies
+   - S3 Glacier Storage Classes
+     - Glacier Instant Retrieval: ms retrieval, 90 days min storage
+     - Glacier Flexible Retrieval: Expedited (1-5 mins), Standard (3-5 hrs), Bulk (5-12 hrs)
+     - Glacier Deep Archive: Long-term storage, Standard (12 hrs), Bulk (48 hrs), 180 days min storage
+   - S3 Intelligent Tiering: Moves data between tiers, no retrieval charges
+
+6. S3 Baseline Performance
+   - 3500 PUT/COPY/POST/DELETE and 5500 GET/HEAD
+   - Optimization
+     - Multipart Upload: Recommended for files >100MB
+     - S3 Transfer Acceleration: Uses AWS edge location
+     - S3 Byte-Range Fetches: Parallelize GETs
+
+7. S3 Batch Operations
+   - Bulk operations on existing S3 objects
+   - Modify metadata, encrypt objects, modify ACLs/tags
+   - Manages retries, tracks progress, sends notifications
+
+8. S3 Storage Lens
+   - Default dashboard
+   - Metrics: Summary, Cost Optimization, Data Protection, Access Management, Event, Performance, Activity, Status Code
+
+9. Amazon S3 Encryption
+   - Server-Side Encryption (SSE)
+     - SSE-S3: Managed by AWS
+     - SSE-KMS: Managed by AWS KMS, audit key usage  -> can be used for tracking the logd in the cloudTrail.
+     - SSE-C: Managed by customer, HTTPS required
+   - Client-Side Encryption: Client encrypts data before sending
+   - Encryption in Transit: SSL/TLS
+   - Default Encryption vs Bucket Policy
+
+10. S3 Access Logs
+    - Logs all access to S3 buckets
+    - Target log bucket must be in same region
+
+11. S3 Pre-Signed URLs
+    - Generate via console, CLI, SDK
+    - Use case: Logged-in users download premium content
+
+12. S3 Glacier Vault Lock
+    - WORM model
+    - Vault lock policy
+    - Object cannot be deleted after lock
+
+13. S3 Object Lock
+    - Prevents deletion/overwrite for fixed time or indefinitely
+    - WORM model
+    - Retention Modes
+      - Compliance: Cannot be changed or shortened
+      - Governance: Some users can change retention
+    - Legal Hold: Prevent deletion, manual removal
+
+14. S3 Access Points
+    - Define access points accessible within VPC
+    - Requires VPC endpoint and policy
+
+15. S3 Object Lambda
+    - Lambda modifies object before returning
+    - Connected via S3 access point and object lambda access point
+
+AWS CloudFront
+----------------
+1. Global Edge Locations
+   - DDoS protection
+
+2. Origins
+   - S3 Bucket: Distribute and cache
+   - VPC Origin: Applications in private subnets
+   - Custom Origin (HTTP)
+ 
+3. CloudFront vs S3 Cross-Region Replication
+   - S3 CRR: Data backup, disaster recovery
+   - CloudFront: Performance improvement
+
+4.It also allows to deliver content from the app hosted in VPC subnet(without exposing to the internet).
+   - Its possible through deliver the traffic to private 
+     - ALB/NLB/EC2 instance
+     - Screenshot
+   -Its also possible as ALB and EC2 as an origin using public network
+     - Screenshot(CloudFront ALB or EC2 as an origin using public network)
+   -Geo Restriction
+     - Allowlist and Blocklist are the options through which control the co
+       country access list.
+   -Pricing
+     - Main the costing is dependended in edge locations
+     - there are 3 classes
+       -All -> all regions best performance
+       -200-> most regions,but excludes the most expensive region
+       -100 -> only the least expensive regions
+     -Cache invalidations is the feature which allows one to bypass the TTL         
+      get instant updates. Paths(example of the file paths /index.html and          
+      /images where the auto updates happen ignoring TTL).
+    -Unicast IP -> one server holds one IP address.
+    -Anycast IP -> all servers holds the same IP address and the client  
+     routes to the nearest one.
+
+5.AWS Global Accelerator
+  - uses edge locations 
+  - it uses this Anycast Ip to improve the latency of the connection from 
+    edge locations.
+  - works with Elastic IP,EC2,ALB,NLB,public or private
+  - it has features like "health checks","security like DDoS 
+    protection",atmost 2 IP need to be whitelisted,disaster recovery.
+  - it integrates with AWS Shield for DDoS protection.
+
+6.                             CloudFront                       |                     Global Accelrator 
+   - improves performance for content such as images and videos | - improves performance for wide range apps using TCP or UDP
+   - dynamic content                                            | - good for non http use cases and https usecases that req IP addresses
+
+AWS Snowball
+--------------
+
+1.its a device which is used for high scale data migration and process data
+  at the edge.
+  - helps migrate upto petabytes of data.
+  - the device name is snowball edge(SSD)
+    - storage optimized - 210TB
+    - compute optimized - 28TB
+  - snowball edge used in edge computing
+    - its a process of processing data without transferring all the data to
+      cloud and waiting for response.
+  - snowball cant import to glacier directly
+    - S3 must be used first in combination with and S3 lifecycle policy.
+
+AWS FSx
+---------
+- Its used to launch 3rd party high performance file system on AWS.
+- Its a fully managed service.
+  - FSx system deployment options(Screen shot)
+    - scratch file system
+      - for temp storage
+      - data is not replicated
+      - short term and high burst
+    - persistent file system
+      - long term storage
+      - data is replicated with same AZ
+      - long term processing and sensitive data. 
+                   ==========================================================================================================================
+                                                                 Amazon FSx COMPARISON TABLE
+===========================================================================================================================================================
+Feature / Aspect           | FSx for Lustre                  | FSx for Windows File Server      | FSx for NetApp ONTAP         | FSx for OpenZFS
+---------------------------|---------------------------------|----------------------------------|------------------------------|----------------------------
+Type                       | Parallel distributed file system| Managed Windows file system      | Enterprise file system       | Open-source ZFS-based file 
+                                                                                                                                 system.
+
+Primary Use Case           | High-performance computing, ML, | Windows apps needing shared      | Mixed enterprise workloads   | Linux/Unix workloads, 
+                           | analytics, big data workloads   | storage, AD integration          | (NFS + SMB + iSCSI)          | dev/test environments
+
+Performance                | 100s of GB/s, millions of IOPS  | 10s of GB/s, millions of IOPS    | High performance, scalable   | Low-latency, efficient
+
+Storage Options            | SSD only (optimized for speed)  | SSD / HDD                        | SSD / HDD                    | SSD only
+
+Max Capacity               | Petabytes (scalable)            | Petabytes                        | Petabytes                    | Tens of TBs (smaller scale)
+
+Protocols Supported        | Lustre protocol (custom)        | SMB, NTFS                        | NFS, SMB, iSCSI              | NFS
+
+Integration with S3        | Yes (import/export seamlessly)  | Yes (for backup & archive)       | Can be integrated via tools  | Not direct, manual possible
+
+On-Premises Access         | Yes (using Lustre clients)      | Yes (via VPN or Direct Connect)  | Yes (hybrid cloud ready)     | Limited (NFS only)
+
+Multi-AZ Support           | Yes (for HA)                    | Yes                              | Yes                          | Single-AZ only
+
+Data Management Features   | Linked with S3, parallel read   | Active Directory integration,    | Autoscaling, replication,    | Snapshots, cloning 
+                           | and write                       | backups ,multi-AZ                | point-in-time cloning          compression
+
+Target Workloads           | HPC, ML training, data analytics| Windows apps, user shares        | Enterprise apps, databases,  | Dev/test environments,                    
+                                                             | file sharing                     | virtualization workloads     | Linux servers
+
+Typical Users              | Researchers, analysts, HPC users| Windows admins, enterprise IT    | Enterprises using NetApp     | Linux admins, developers
+============================================================================================================================================================
+
+  
+AWS Storage gateway
+====================
+
+- it acts as bridge bw the cloud data and on-premises data
+- different types of gateway
+  - file gateway(screen shot)
+    - it uses s3 in the backend to cache data uses SMB or NFS protocol
+  - volume gateway(screenshot)
+    - its supports the block storage using iSCSI uses S3
+    - EBS snapshots is used for backup for restore purpose
+    - 2 types if volumes
+      - cached volumes:for low latency access to the data
+      - stored volumes:entire dataset in on-premises schedule backup for s3.
+  - tape gateway(screenshot)
+    - uses iSCSI VTL protocol , companies use them for to replace the physical tapes with vitual taps in AWS.
+    - companies use this gateway inorder to backup the data in cloud tape
+    - genrally stored in S3 Galcier for long time storage.
+  - detailes storage gateway explaination covering all three types(screenshot)
+
+
+AWS Transfer family
+====================
+- Fully managed service for file transfers into and out of S3,EFS(but not between the aws services) using FTP protocol.
+  - FTP,FTPS,SFTP are the protocols used.
+  - multiAZ ,infrastructure is managed by us,scalable,reliable.
+  - provisioned endpoint/hr and per GB transfer
+- DataSync
+  - Used to move large amount of data from 
+    - on-premises to AWS,AWS to AWS etc..
+    - synchronised to S3,EFS,FSx etc..  
+    - replication can be scheduled hr/week/daily and the file permissions and meta data are preserved.
+    - synchronisation using agent(screenshot)
+    - snowcone comes with built-in data sync agent 
+    - snowmobile,snowcone,snowball are used to move large amount of data when there is network issue.
+
+Messaging and decoupling apps
+===============================
+
+- There are mainly 2 types of communication
+  - Synchronous communication and Asynchronous communication(Screenshot)
+  - we use SQS,SNS,Kenisis for the decoupling of apps
+
+AWS SQS
+========
+- Its a queuing service and is fully managed service
+- Unlimited number of messages and default retention of messages is 4 days and max of 14 days
+- low latency
+- can have duplicate messages and out of order messages too
+- The messages are produced to SQS using SDK(send message API)
+- Message is persisted until the its read and delete by customer
+- Consumers -> EC2 instances,servers,AWS lambda (screen shot)
+- consumers receive upto 10 messages at a time and process them. 
+- SQS with the ASG(screenshot)
+- SQS decoupling Apps(screenshot)
+
+- SQS Encryption
+  - in-flight -> using HTTPS API
+  - At-rest -> KMS Keys
+  - Client-side encryption 
+  - Access Controls -> IAM policies to regulate access to SQS API
+  - SQS Access policies 
+    - useful for cross-account access to SQS queues
+    - useful for allowing other services to write to an SQS queue.
+
+- SQS Message visibility timeout(MVT)
+  - its a time period where the message which is already polled is invisible for sometime inorder to be processed.
+  - ex - SQS Message visibility timeout is 30sec then the 30sec after the message is poll the message gets visible.
+  - in case of processing time is more than the MVT then there is API called "changeMessageVisibilty" from which we can extend the MVT.
+  - this API eliminates the duplicate processing of the messages
+
+- SQS Long polling 
+  - its a method of wating the customer after req for message until the message gets into the queue right then he receives it
+  - long polling reduce latency , API calls and improves efficiency .
+  - its enabled in the queue level and uses "WaitTimeSeconds".
+
+- AWS SQS -FIFO Queue
+  - Limited throughput : 300 msg/s , 3000msg/s(with batching where each batch consist of 4 messages (300*10(from each batch)  = 3000msg/s))
+
+- SQS as buffer to DB writes(screenshot)
+ - this solution handles the traffic smartly and can handle infinite number of messages  
+ - this solution is design for failure and relaible and efficient.
+ - example with the applications(screenshot).
+
+AWS SNS
+========
+- its also called as pub/sub topics when we want to send one message to many receivers.
+- SNS topic receives the sende's message and the receiver connects with the SNS topic 
+- it can be integrated with many AWS services
+- how to publish
+  - topic publish(using the SDK)
+  - direct publish(for mobile apps SDK)
+- Encryption
+  - in-flight using HTTPS API
+  - at-rest using KMS keys
+  - client side encryption if the client wants
+- Access controls
+  - IAM policies 
+- SNS Access policies
+  - useful for cross account access to SNS 
+  - useful for allowing other services to write an SNS topic
+- SQS+SNS model(screenshot)
+  - full decoupled
+  - make sure your SQS queue access policy allows for SNS to write.
+  - each SQS gets subscribed by one SNS topic
+  - each SQS topic comm with the each service.
+  - SNS topic allows cross-region delivery
+- S3 Events to multiple queues model(screenshot)
+  - SNS topic can also subscribe with lambda function
+- SNS to AWS S3 through Kinesis data firehouse(KDF)[screenshot]
+  - S3 supports the KDF integration
+- SNS - FIFO+SQS-FIFO queues(screenshot)
+- SNS - Message filtering(screenshot)
+  - we can apply filter policies for each SNS topic messages
+
+AWS Kinesis Data Streams(screenshot)
+========================================
+- collect and store the streaming data in real-time
+- takes data from producers(Apps,Kinesis Agent) and tranforms the data which can be used by consumers(lambda,KDF etc...)
+- data retention bw up to 365 days
+- "partitonID" can be enabled on records for data ordering.
+- KPL(kinesis producer library) for optimized producer apps
+- KCL(kinesis client library) for optimized consumer apps
+- Capacity modes of KDS
+  - shards - the unit of capacity(throughput/ordering) 
+    - each shard contains records with unique sequence numbers
+  - provisioned mode
+    - choose number of shards
+    - scale manually to increase or dec the shards
+    - each shard gets 1MB in and 2MB out
+    - you pay per shard provisioned.
+  - On-demand mode   
+    - no need to provision or manage the capacity
+    - default capacity 4mbps in or out.
+    - pay per stream/hour and data in/out per GB
+- cloudshell and commands which gives the info about created KDS shards and records(screenshot)
+
+AWS Data Firehouse(screenshot)
+==============================
+- its a fully managed service
+  - supports amazon redshift/S3/OpenSearch service.
+  - 3rd party splunk/mongoDB etcc
+  - custom HTTP endpoint
+- automatically scales,serverless,pay for what you use
+- custom data trnsformation using AWS lambda(CSV to Json)
+- KDS vs KDF(screenshot).
+- SQS vs SNS vs Kinesis
+
+AWS MQ
+=======
+
+- SQS , SNS are cloud-native services proprietary protocols from AWS
+- where the apps running on on-premises may use open protocol such as MQTT,STOMP etc can use MQ instead of shifting to SQS,SNS.
+- as for design for failover we use multi-AZ MQ (screenshot).
+
+
+Introduction to Container concept
+==================================
+- docker architecture and dockerfile and  docker images(screenshots).
+- ECS -> AWS own container platform
+- ECS Cluster ->its where the EC2 instances with docker containers are managed.
+- EKS -> AWS managed Kubernetes service
+- Fargate -> AWS serverless container platform works with ECS and EKS
+- ECR -> used to store the container images
+
+AWS ECS
+========
+- For EC2 instance launch type(screenshot)
+  - Launching docker containers on AWS = Launch ECS tasks on ECS cluster
+  - Each EC2 instance must run the ECS agent to register in the ECS cluster
+  - AWS takes care of starting/stopping containers
+- For fargrate launch type
+  - no need to manage/provision the infra of the EC2 instances
+  - just need to create ECS tasks
+  - to scale just increase the number of tasks
+- IAM roles for ECS(screenshot)
+  - we can create 2 
+    - EC2 instance profile
+      - used by ECS agents
+      - makes API calls to ECS service
+      - pull docker image from ECR
+      - reference sensitive data in secrets manager or SSM parameter store.
+    - ECS task role
+      - allow wach task to have a specific role
+      - task roles are defined in task definition.
+- ECS can also be integrated with the load balancer(screenshot)
+  - ALB -> supports in most of the cases
+  - NLB -> for high performance and throughput
+  - CLB -> not recomm
+- ECS and Fargrate are compatible with the EFS file system
+- Fargrate + EFS = serverless
+- S3 is cannot be mounted as file system
+- ECS service Auto Scaling
+  - Automatically increase/decrease the desired no of ECS tasks
+  - EC2 autoscaling != EC2 auto scaling
+  - three types of autoscaling
+    - target tracking- scale based in target value
+    - step scaling- scale based on specific cloudwatch alarm
+    - scheduled scaling- scale based in specified date/time
+- EC2 launch type Autoscaling
+  - ASG type scaling
+  - ECS cluster capacity provider
+    - its paired with ASG
+    - automatically provision and scale the infra for your ECS tasks
+- solution for ECS serverles architectures(screenshots)
+  - ECS tasks backed by the AWS eventbridge(ss)
+  - ECS tasks backed by AWS eventbridge schedules(ss)
+  - ECS-SQS Queue(ss)
+  - ECS - Intercept stopped tasks using eventbridge
+
+AWS ECR
+=========
+- store and manage docker images
+- docker images are stored in the ECR repositories(screenshot)
+- fully integrated with ECS,backed by AWS S3.
+- Access is controlled by IAM 
+- supports vulnerability of images ,scanning .versioning
+
+AWS EKS
+========
+- its a way to launch managed Kubernetes clusters on AWS.
+- Kubernetes is an open source system for automatic deployment,scaling and management of containerized apps(screenshot)
+- it support both serverless and server computations
+- There are node groups on EKS
+  - managed node groups
+   - creates and manages nodes 
+   - nodes are part of ASG managed by EKS
+   - supports on-demand or spot instances.
+  - self managed groups
+   - these must be created by us and registered to the EKS cluster.
+   - you can use prebuilt AMI or AWS optimised EKS AMI
+  - simply go for fargrate for serverless.
+  - Data volumes supported by this
+    - EBS,EFS(works with fargate),FSx for lustre,FSx for NetApp ONTAP
+
+AWS AppRunner  (screenshot)
+==============
+- Fully managed service that makes easy to deploy apps
+- no infra exp req
+- automatic build,deploy the web app
+- automatic scaling
+- VPC access support
+- connect to DB cache and message queue services
+
+AWS App2Container
+==================
+- its a lift and shift app
+- CLI tool for migrating and modernizing Java and .NET web apps
+- generates cloudFormation templtes
+- deploy ECS ,EKS supports CI/CD pipelines
+
+Serverless in AWS
+===================
+-The serverless services in AWS
+ - AWS Lambda
+ - DynamoDB
+ - AWS cognito
+ - AWS API Gateway
+ - Amazon S3
+ - AWS SNS & SQS
+ - AWS kinesis data firehouse
+ - Aurora serverless
+ - step function
+ - fargrate
+
+AWS Lambda
+===========
+- When there was EC2 
+  - virtual servers in the cloud are limited by RAM and CPU and scaling means removing and adding servers
+  - lambda function is serverless but limited by time and scaling is automated
+- Benefits of lambda
+  - easy pricing (pay per request and compute time)
+  - integrated with may programming laguages
+  - easy monitoring with cloud watch
+  - we can also use containers on lambda container image
+  - it can be integrated with many AWS services
+  - serverless thumbnail creation(screenshot)
+  - serverless CRON job(screenshot)
+- Pricing in Lambda
+  - pay per calls
+  - pay per duration
+- Limits of AWS lambda
+  - memeory allocation 128M-10GB
+  - maximum exectution time 900 seconds(15 min)
+  - deployment size-> 50MB,250MB(uncompressed)
+- Concurrency and async invocations of lambda(screenshot)
+  - cold start
+    - new instance code is loaded and code outside the handler run
+    - if the init is large this process can take some time.
+    - so first req has high latency
+  - Provisioned concurrency
+    - conc allocated before the func is invoked
+    - cold start never happens
+    - app autoscaling can manage concurrency
+- Lambda snapstart(screenshot)
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

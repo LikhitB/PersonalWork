@@ -1,0 +1,187 @@
+Creating a user in non-interactive shell
+=============================================
+
+sudo useradd -s /bin/false javed
+
+useradd → creates a new user.
+
+-s → sets the user’s login shell.
+
+/bin/false → non-interactive shell (immediately exits, no login/SSH). [ /usr/sbin/nologin or /sbin/nologin also works if present ]
+
+Used for service/automation accounts where shell access is not needed.
+
+Verify: grep javed /etc/passwd (check assigned shell).
+
+
+Creating a Temporary User (Expiry Date)
+===========================================
+
+Use -e with useradd to set expiry:
+sudo useradd -e 2025-12-31 javed
+
+For an existing user, use chage:
+sudo chage -E 2025-12-31 javed
+
+-e / -E = account expiration date (YYYY-MM-DD format).
+
+After expiry, the account is locked and cannot log in.
+
+Check expiry details: sudo chage -l javed.
+
+Disabling the ssh root login for servers and importance of etc/ssh
+===================================================================
+
+SSH Configuration Folder
+
+SSH server settings are stored in:
+/etc/ssh/
+
+Main configuration file:
+/etc/ssh/sshd_config
+
+Lines starting with # are comments (ignored by SSH).
+
+To disable root login, edit the file:
+
+PermitRootLogin no
+
+
+After changes, restart SSH service:
+
+sudo systemctl restart sshd
+
+
+Keep a backup before editing:
+
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
+===================================================================
+
+-> in order to execute the file the user must have the read permission also.
+
+===================================================================
+
+SELinux = Security-Enhanced Linux
+
+Provides Mandatory Access Control (MAC) at kernel level
+
+Works in addition to normal Linux permissions (chmod, chown)
+
+Access is controlled by security policies
+Based on labels (contexts), not users
+eg -> user:role:type:level
+sudo dnf install -y selinux-policy selinux-policy-targeted policycoreutils  -> for installing SELinux
+sestatus              # detailed status
+getenforce            # current mode
+setenforce 0|1        # permissive / enforcing (temporary)
+ls -Z                 # view SELinux context
+
+=====================================================================
+sudo passwd root  -> changes the password of the root
+su - -> switch user to root
+
+
+CRON JOB
+=====================================================================
+pattern of the time
+
+check cat /etc/crontab
+sudo crontab -e  -> edit the root's cron tab
+sudo crontab -u likhit -e  -> edit the likhit's cron tab
+
+
+Minute  Hour  DayOfMonth  Month  DayOfWeek   Command
+30      6     *           *      3           echo<hello    -> cronjob for every Wednesday 6:30 am
+0       21    27           2     *           echo>hello world  -> cronjob for every 27th day of February at 9:00
+
+
+Install cron service: sudo yum install -y cronie
+Start cron daemon: sudo systemctl start crond
+Enable cron at boot: sudo systemctl enable crond
+Check cron status: sudo systemctl status crond
+Edit root cron jobs: sudo crontab -e
+List root cron jobs: sudo crontab -l
+Example cron entry (every 5 minutes): */5 * * * * /bin/echo hello > /tmp/cron_text
+Cron directories: /etc/cron.hourly, /etc/cron.daily, /etc/cron.weekly, /etc/cron.monthly
+System cron files location: /etc/cron.d/
+Cron main config file: /etc/crontab
+Cron log file: /var/log/cron
+View cron logs (systemd): journalctl -u crond
+Make script executable: chmod +x script.sh
+Recommended script location: /usr/local/bin/
+Verify cron output file: cat /tmp/cron_text
+
+getting the usage of the cpu 
+
+ df -H | awk '{print $5 " " $1}' | cut -d % -f 2   -> only gives numbers check one by one.
+
+======================================================================
+
+downloading pem keys before ssh
+
+/mnt/c/Users/VLIKHBA/Downloads/MyPem.pem     -> its the wsl folders where the folders/files stored in windows are stored in /mnt
+
+so mv /mnt/c/Users/VLIKHBA/Downloads/MyPem.pem ~/ -> move them to ~/ directory
+
+then chmod 600 MyPem.pem
+
+ssh ec2-user@ipaddress
+
+======================================================================
+Ansible 
+=======
+
+adhoc jobs example
+------------------
+ansible -i inventory all -m "shell" -a "touch devopsclasses" -> creates the devopsclass file in the target ipaddress mentioned in "inventory" file
+
+apply only for ips present in the webserver folders
+ansible -i inventory webservers -m "shell" -a "touch devopsclasses" -> creates the devopsclass file in the target ipaddress mentioned in "inventory" file
+
+then the inventory file looks like 
+[webserver]
+list of ips  -> only these will be touched
+
+[dbservers]
+list of ips
+
+ansible-playbook -i inventory my_first.yml  -> example to run the playbook
+
+the playbook or yml file looks like(for starting the ngnix server of the target server ]
+---
+- name: first playbook for installing a module
+  hosts: all
+  become: true
+
+  tasks:
+    - name: install nginx
+      apt:
+        name: nginx
+        state: present
+    - name: start nginx
+      service:
+        name: nginx
+        state: stopped
+
+Ansible roles
+we use ansible-galaxy to create roles
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
