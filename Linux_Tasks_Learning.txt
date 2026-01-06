@@ -167,10 +167,137 @@ the playbook or yml file looks like(for starting the ngnix server of the target 
 Ansible roles
 we use ansible-galaxy to create roles
 
+==============================================================
+yum installs OS-managed packages that are stable but often outdated, while pip3 installs Python-managed packages directly from PyPI, allowing precise version control and faster updates. That is why pip3 is preferred in automation labs and modern DevOps workflows.
+
+RHEL/CentOS separates system Python packages and user-installed packages.
+System PATH for root sometimes doesn’t include /usr/local/bin (only /usr/bin and /bin).
+
+yum install python3-pip -y
+pip3 install ansible==4.7.0
+
+python3 -m pip show ansible -> before updating the path variables(Location: /usr/local/lib/python3.9/site-packages)
+
+If you just want Ansible globally and don’t care about 4.7.0 specifically, use dnf/yum install ansible.
+If you must use 4.7.0, pip is the easiest, but you need to ensure the executable is in PATH (like we did).
+
+==============================================================
+root level path
+---------------------
+- importance of /
+
+/
+├── home
+│   └── banner
+│       └── backup (if we put command ls backup)
+├── etc
+├── var
+├── backup   ← THIS is where your file went  (if we put command, ls /backup)
+============================================================
+Secure copy
+------------
+
+scp /backup/xfusioncorp_official.zip clint@stbkp01:/backup/   
+- present the file is in banner server gts moved to clint backup folder.
+
+-when we use scp we need to to do ssh-keygen and ssh-copy-id for automation purpose.
+============================================================
+
+| DIRECTORY | PURPOSE / MEANING                  | COMMON EXAMPLES / WHAT YOU STORE THERE |
+| --------- | ---------------------------------- | -------------------------------------- |
+| /         | Root of filesystem                 | Everything starts here                 |
+| /bin      | Essential user commands            | ls, cp, mv, cat, rm                    |
+| /sbin     | System administration commands     | reboot, shutdown, mount                |
+| /etc      | System configuration files         | sshd_config, fstab, passwd             |
+| /home     | Home directories for users         | /home/ec2-user, /home/john             |
+| /root     | Home directory for root user       | Root user's personal files             |
+| /tmp      | Temporary files (auto-cleaned)     | Installers, downloads                  |
+| /var      | Variable data (changes frequently) | logs, cache, databases                 |
+| /var/log  | System & application logs          | messages, secure, httpd logs           |
+| /var/www  | Web server root                    | html files, websites                   |
+| /usr      | Installed software & libraries     | java, git, python                      |
+| /usr/bin  | User commands (non-essential)      | vim, curl, wget                        |
+| /usr/lib  | Libraries for programs             | .so files                              |
+| /opt      | Optional / third-party software    | tomcat, oracle, sonarqube              |
+| /boot     | Bootloader & kernel files          | grub, vmlinuz                          |
+| /dev      | Device files                       | sda, null, tty                         |
+| /proc     | Process & kernel info (virtual)    | cpuinfo, meminfo                       |
+| /sys      | Hardware & kernel interface        | system devices info                    |
+| /run      | Runtime process data               | pid files, sockets                     |
+| /media    | Auto-mounted removable media       | USB drives                             |
+| /mnt      | Manual mount point                 | temporary mounts                       |
 
 
+| TASK                    | WHERE TO LOOK |
+| ----------------------- | ------------- |
+| Edit configuration      | /etc          |
+| Check logs              | /var/log      |
+| Store temporary files   | /tmp          |
+| Install custom software | /opt          |
+| User personal files     | /home         |
+| Web application files   | /var/www      |
 
 
+| SCENARIO               | CORRECT PATH         |
+| ---------------------- | -------------------- |
+| Download Tomcat ZIP    | /tmp                 |
+| Install Tomcat         | /opt/tomcat          |
+| Apache website files   | /var/www/html        |
+| SSH configuration      | /etc/ssh/sshd_config |
+| Check system errors    | /var/log/messages    |
+| User uploads/documents | /home/username       |
+
+
+| ONE-LINE MEMORY TRICK | MEANING              |
+| --------------------- | -------------------- |
+| /etc                  | configuration        |
+| /var                  | logs & changing data |
+| /opt                  | applications         |
+| /tmp                  | temporary            |
+| /home                 | users                |
+
+
+| Command     | Meaning                                                         |
+| ----------- | --------------------------------------------------------------- |
+| `su -`      | Switch to root **using root password**                          |
+| `sudo su -` | Switch to root **using your own user password** (if authorized) |
+
+=====================================================================
+Networking Concepts
+---------------------
+
+netstat-> shows the connected ips in a list
+telnet -> shows the connection
+ping  -> shows the packet transfer
+ipTbales
+-consist of 
+ - input chain -> chains shows the incoming packets
+ - output chain -> chain shows the outgoing of the packets
+ - forward chain -> to forward packet from source to destination
+ - targets -> ACCEPT,REJECT,DROP
+ - commands related to it
+   - iptables -F  -> flush all tables
+   - iptables -L -> list all ip tables
+   - iptables -L --line-numbers-> list all ip tables with line numbers
+   - iptables --policy INPUT ACCEPT  
+     - INPUT -> chain
+     - ACCEPT -> accept or reject or drop
+   - iptables -I INPUT -s 10.0.0.1 -j DROP   -> -I means inserts , -s source ip , -j means target as DROP -> target of the input chain
+   - iptables -A INPUT -s 10.0.0.1 -j DROP   ->-A means append
+   - difference bw I and A is insert add the rule at top of the row and append adds to the bottom most.
+   - iptables -D INPUT "linenumber" -> -D -> deletes the chain rule
+   - iptables -I INPUT -p tcp --dport 22 -j ACCEPT-> allows port 22
+   - iptables -I INPUT -p tcp --dport 22 -s 10.0.0.1/24 -j ACCEPT  -> allows 22 port req from that source ip only
+   - sudo /sbin/iptables-save -> saves iptables in sbin
+   - /sbin = System binaries
+   - /bin = Binary commands needed by normal users
+traceroute -> used to trace the route of the requests and response
+mtr(my traceroute) -> pings,traces packets and shows routes
+telnet -> used to connect to ips using port numbers
+ip address show
+iwconfig -> used to check the details of wireless connection
+curl -X GET "" | jq
+jq -> used to format the response of curls
 
 
 

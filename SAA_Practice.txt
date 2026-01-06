@@ -1409,6 +1409,12 @@ Cost (you pay per request)
 Empty receives
 
 =================================================
+ by referencing Vault Lock, which can enforce write-once, read-many (WORM) policies for backups. However, EBS snapshots are not directly stored in AWS Backup vaults unless they are created through AWS Backup, and the original setup is using manual or script-driven EBS snapshot creation. Additionally, Vault Lock applies only to backups managed by AWS Backup, not to independently created snapshots through Amazon EC2 or custom scripts
+===========================================
+S3 Access Analyzer is used for auditing and security analysis, not event-driven processing or triggering Lambda functions. It cannot be used to detect object uploads or initiate thumbnail generation.
+============================================
+AWS Firewall Manager is a security management service that allows you to centrally configure and manage firewall rules across your accounts and applications in AWS Organization
+With Security Hub, you have a single place that aggregates, organizes, and prioritizes your security alerts, or findings, from multiple AWS services, such as Amazon GuardDuty, Amazon Inspector, Amazon Macie, AWS Identity and Access Management (IAM) Access Analyzer, and AWS Firewall Manager, as well as from AWS Partner solutions
 
 AWS WAF cannot be attached to S3.
 WAF works with:
@@ -1830,7 +1836,7 @@ Cost Optimization Hub + Compute OptimizerIdentifies idle EC2 and gives right‑s
 You can set up Amazon CloudFront with origin failover for scenarios that require high availability. To get started, you create an origin group with two origins: a primary and a secondary. If the primary origin is unavailable or returns specific HTTP response status codes that indicate a failure, CloudFront automatically switches to the secondary origin.
 
 Use field level encryption in Amazon CloudFront to protect sensitive data for specific content
-Field-level encryption allows you to enable your users to securely upload sensitive information to your web servers. The sensitive information provided by your users is encrypted at the edge, close to the user, and remains encrypted throughout your entire application stack. 
+Field-level encryption allows you to enable your users to securely upload sensitive information to your web servers. The sensitive information provided by your users is encrypted at the edge, close to the user, and remains encrypted throughout your entire application stack.
 ============================================================
 
 Network Load Balancer is the ONLY AWS load balancer that supports static Elastic IPs
@@ -2080,3 +2086,179 @@ Geoproximity routing lets Amazon Route 53 route traffic to your resources based 
 Enabling deletion protection on DynamoDB tables is the most effective, proactive, and low-overhead approach to prevent accidental table deletion. This feature is designed specifically to avoid destructive actions like the one that caused the outage in the scenario
 =================================================================
 Amazon MQ is a managed message broker service for Apache ActiveMQ that makes it easy to set up and operate message brokers in the cloud. Message brokers allow different software systems–often using different programming languages, and on different platforms–to communicate and exchange information.
+
+=================================================================
+Systems Manager Maintenance Windows can be configured to run Automation documents or Lambda functions at precise times. You can schedule a task to remove instances from the load balancer using pre-defined documents (such as AWSEC2-PatchLoadBalancerInstance) and then re-register them once patching is complete. This offers fine-grained scheduling and orchestration for controlled patching without disrupting traffic.
+
+=================================================================
+here are no standby instances in Aurora. Aurora performs an automatic failover to a read replica when a problem is detected
+
+Handle all read operations for your application by connecting to the reader endpoint of the Amazon Aurora cluster so that Aurora can spread the load for read-only connections across the Aurora replica
+==================================================================
+Streaming to CloudWatch Logs and analyzing with Athena is not real-time, adds query latency, and is better suited for log analytics—not live metrics monitoring or dashboards.
+
+==================================================================
+AWS Site-to-Site VPN uses IPsec tunnels, which provide encryption at the network layer, ensuring that traffic is securely transmitted between the on-premises network and the VPC. By applying security groups and network ACLs, fine-grained traffic control is possible. Additionally, session-layer encryption (e.g., HTTPS, TLS) can be layered on top, satisfying both encryption requirements with minimal overhead. This is the most cost-effective and secure solution for the given requirements.
+While AWS Direct Connect provides a dedicated private connection with high bandwidth and low latency, it does not encrypt traffic at the network layer by default. Additional technologies (e.g., MACsec or an overlay VPN) are needed to secure the connection. Furthermore, session-layer encryption is not inherently addressed by Direct Connect. Without additional configuration, this approach does not meet the encryption requirements.
+==================================================================
+
+As AWS Direct Connect does not support encrypted network connectivity between an on-premises data center and AWS Cloud, therefore this option is incorrect.
+IPsec is a protocol suite for securing IP communications by authenticating and encrypting each IP packet in a data stream.(for site-to-site VPN)
+============================
+
+ASG directly uses CloudWatch metric → Target Tracking
+(e.g. “keep messages per instance = 100”)
+Using notifications instead of direct scaling policies:
+
+Adds complexity
+Isn’t real-time
+Doesn’t scale smoothly
+Isn’t an AWS best practice
+====================================
+
++------------------------------+-----------------------+-------------------------------+
+| Feature Needed               | Kinesis Data Streams  | Firehose                      |
++------------------------------+-----------------------+-------------------------------+
+| Multiple consumers           | ✔ Yes                 | ❌ No                         |
++------------------------------+-----------------------+-------------------------------+
+| Raw data access              | ✔ Yes                 | ❌ No                         |
++------------------------------+-----------------------+-------------------------------+
+| Replay / reprocessing        | ✔ Yes                 | ❌ No                         |
++------------------------------+-----------------------+-------------------------------+
+| Real-time low latency        | ✔ Yes                 | ⚠ Buffered (seconds)         |
++------------------------------+-----------------------+-------------------------------+
+| Stream processing (Lambda)   | ✔ Yes                 | ⚠ Limited transform only      |
++------------------------------+-----------------------+-------------------------------+
+| Deliver cleansed data to     | ✔ Yes                 | ❌ No direct support          |
+| DynamoDB                     |                       |                               |
++------------------------------+-----------------------+-------------------------------+
+| Parallel pipelines           | ✔ Yes                 | ❌ No                         |
++------------------------------+-----------------------+-------------------------------+
+=======================================
+
+When a host needs to send many records per second (RPS) to Amazon Kinesis, simply calling the basic PutRecord API action in a loop is inadequate. To reduce overhead and increase throughput, the application must batch records and implement parallel HTTP requests. This will increase the efficiency overall and ensure you are optimally using the shards.
+======================================
+
+This solution uses EBS fast snapshot restore (FSR), which allows immediate, full-performance access to new EBS volumes created from snapshots—eliminating the usual initialization delay. Creating volumes from snapshots ensures that test data is logically cloned without impacting the source, and the FSR feature guarantees the I/O performance required by the analytics workloads. This method is efficient, scalable, and preserves isolation between test and production environments.
+
+=======================================
+ While Amazon FSx for NetApp ONTAP does support Multi-AZ deployments for high availability within a Region and integrates with AWS Backup for local backups, cross-Region replication is not managed automatically by AWS Backup for FSx for ONTAP.
+
+======================================
+Amazon EFS is a fully managed, scalable, NFS-compatible file system ideal for containerized workloads. It provides multi-AZ mount targets by default and supports integration with AWS Backup for automated cross-Region backup and restore. When used with AWS Backup, EFS can achieve an RPO of 8 hours or less through scheduled backups. The Standard storage class offers high durability and low latency, making it a strong fit for active workloads that span Availability Zones.
+========================================
+AWS PrivateLink is a fully managed service that enables private connectivity between Virtual Private Clouds (VPCs), AWS services, and supported third-party SaaS applications over the AWS network, without exposing traffic to the public internet
+
+=======================================
+Kinesis charges and throttles based on the number of PUT requests, not the number of records.
+
+1 PUT = up to 1 MB of data
+Sending 1000 individual messages = 1000 PUTs
+Sending 1000 messages batched into 1 record = 1 PUT
+---
+A shard in Amazon Kinesis Data Streams is a unit of capacity and parallelism.
+Think of it as one lane on a highway.
+
+More lanes = more cars can flow →
+More shards = more data you can ingest & read.
+
+1 MB/second of data ingestion
+1000 records/second
+5 transactions/second per partition key
+--
+2 MB/second of data retrieval
+5 read transactions/second
+============================================
+Storage Gateway(File Gateway)
+--
+Sync on-prem NFS/SMB to S3
+Cache frequently used files
+=========================================
+Set up Amazon Route 53 active-passive type of failover routing policy. If Amazon Route 53 health check determines the Application Load Balancer endpoint as unhealthy, the traffic will be diverted to a static error page, hosted on Amazon S3 bucket
+========================================
+Route 53 sends traffic to both endpoints whenever they are healthy
+Traffic is load balanced, not failover-based
+The S3 page will receive some traffic even when the ALB is healthy (undesirable)
+=======================================
+Archive, infrequent access-S3 Intelligent‑Tiering or Glacier
+High IOPS, POSIX-EFS
+HPC,-burstyFSx Lustre
+Enterprise NAS-FSx ONTAP
+Frequent shared access-EFS Standard
+=======================================
+
+NFS + SMB together
+multi-protocol
+snapshots & cloning
+iSCSI
+enterprise migratio
+volume tiering
+ONTAP compatibility
+lift‑and‑shift from NetApp
+file system with advanced features
+
+👉 The correct answer is usually FSx ONTAP.
+==========================================
+Amazon S3 supports server-side encryption using AWS KMS multi-Region keys, which allows secure data storage and supports automatic replication to a secondary Region via CRR. Amazon Athena is a serverless query service that can run SQL queries directly against S3 data without requiring a database engine or managing infrastructure. This solution supports encryption at rest, regional redundancy, and SQL-based querying with minimal overhead.
+==========================================
+Amazon RDS Provisioned IOPS Storage is an SSD-backed storage option designed to deliver fast, predictable, and consistent I/O performance. This storage type enhances the performance of the RDS database
+==========================================
+When you use AWS WAF on Amazon CloudFront, your rules run in all AWS Edge Locations, located around the world close to your end-users. This means security doesn’t come at the expense of performance. Blocked requests are stopped before they reach your web servers.
+==========================================
+AWS WAF can be deployed on Amazon CloudFront, the Application Load Balancer (ALB), and Amazon API Gateway
+
+=========================================
+AWS IAM Access Analyzer helps identify resources shared with external entities by analyzing resource-based policies (e.g., S3 buckets, KMS keys, SNS topics, IAM roles) and detecting unintended access. It uses automated reasoning to evaluate the effects of policies and determines if a resource is accessible from outside the account or organization. Access Analyzer also supports policy validation, helping administrators craft secure and compliant access policies. It’s purpose-built for detecting and auditing external access paths to resources.
+===========================================
+AM Access Advisor shows the last accessed information for AWS services used by IAM users and roles, but it does not evaluate resource-based policies or determine if resources are shared externally. It is designed to help with least privilege enforcement by identifying unused permissions, not external access analysis. It cannot detect whether S3 buckets or IAM roles are publicly accessible or shared with specific accounts.
+==========================================
+Instance Store is physically attached NVMe or SSD → extremely fast.
+Offers the highest raw IOPS and throughput on AWS.
+Ideal for large, temporary scratch data and high‑performance workflows (video processing, rendering, analytics).
+--
+Even the fastest EBS (io2) cannot match the sheer raw throughput of instance store NVMe
+============================================
+Amazon Kinesis Data Streams cannot read audio files. Amazon Alexa cannot be used as an Automatic Speech Recognition (ASR) service, though Alexa internally uses ASR for its working.
+Using Amazon EventBridge event or Amazon CloudWatch alarm to trigger an AWS lambda function, directly or indirectly, is wasteful of resources. You should just use the EC2 Reboot CloudWatch Alarm
+Using Amazon CloudWatch alarm actions, you can create alarms that automatically stop, terminate, reboot, or recover your Amazon EC2 instances. You can use the stop or terminate actions to help you save money when you no longer need an instance to be running.
+This is a distractor as Amazon S3 on Outposts (S3 Outposts) delivers object storage to your on-premises AWS Outposts environment. It is used in conjunction with AWS Outposts and has no relevance to the current use case.
+=============================================
+CloudFront only supports ACM certificates that are created in the us-east-1 (N. Virginia) Region. Even if the content resides in a different Region (like eu-west-2), a public certificate for HTTPS on a custom domain name must originate from us-east-1. This certificate is used to secure content access through CloudFront over HTTPS.
+=============================================
+An Amazon S3 Glacier vault is a container for storing archives. When you create a vault, you specify a vault name and the AWS Region in which you want to create the vault. Amazon S3 Glacier Vault Lock allows you to easily deploy and enforce compliance controls for individual Amazon S3 Glacier vaults with a vault lock policy. You can specify controls such as “write once read many” (WORM) in a vault lock policy and lock the policy from future edits. Therefore, this is the correct option.
+===============================
+The ask: choose the most cost‑effective solution that gives low‑latency, frequent access from on‑prem rendering to data that lives in S3.
+S3 File Gateway is correct because it exposes S3 via SMB/NFS, caches hot data locally for low latency, keeps the bulk in low‑cost S3, and reduces operational complexity and cost compared to DIY or HPC‑oriented alternatives.
+===============================
+Public NLB with listeners:
+
+TCP 22 (SSH) → Target group (bastion EC2, ASG)
+Optionally TCP 3389 (RDP) → Target group (Windows bastion EC2, ASG)
+
+
+Bastion EC2 instances spread across multiple AZs, managed by an Auto Scaling group.
+Security groups/NACLs:
+
+Restrict inbound to your trusted IP ranges (e.g., corporate egress IPs or VPN).
+
+
+Optional:
+
+Associate EIP(s) to NLB per AZ for fixed ingress addresses.
+Use SSM Session Manager to further reduce public exposure (when possible), keeping NLB only if you still need direct SSH/RDP.
+====================================
+S3 Storage Lens provides a centralized, organization-wide view of storage usage and activity metrics, including versioning status. When advanced metrics are enabled, the dashboard offers per-bucket insights that allow users to filter and identify buckets where versioning is not turned on. This capability spans all Regions and accounts within an organization, making it highly scalable and efficient. The visual dashboard and downloadable CSV reports simplify compliance and operational reviews, helping teams detect misconfigured buckets quickly without needing to manually inspect each one. This solution offers minimal operational overhead and aligns well with the requirement to monitor versioning across a large-scale, distributed S3 environment.
+====================================
+This new Amazon S3 analytics feature observes data access patterns to help you determine when to transition less frequently accessed STANDARD storage to the STANDARD_IA (IA, for infrequent access) storage class.
+===================================
+Though S3 Glacier Instant Retrieval (GIR) allows instant access, it is more expensive per GB than S3 Standard-IA for infrequent access. It is typically used for archival data that needs occasional but instant access, not as a substitute for IA
+storage cost -> glacier deep archive instant retrival>standardIA
+retrival cost -> glacier deep archive instant retrival < standardIA
+====================================
+To restrict access to content that you serve from Amazon S3 buckets, you need to follow the following steps:
+
+Create a special Amazon CloudFront user called an origin access identity (OAI) and associate it with your distribution.
+Configure your Amazon S3 bucket permissions so that Amazon CloudFront can use the OAI to access the files in your bucket and serve them to your users. Make sure that users can’t use a direct URL to the Amazon S3 bucket to access a file there.
+====================================
+WS Global Accelerator does not support S3 buckets as direct endpoints. It’s designed for improving performance for global applications deployed on EC2, ALB, or NLB, not for S3 static websites. There’s no direct integration between Global Accelerator and S3 unless the S3 bucket is fronted by another service like CloudFront or ALB. Therefore, this option is not technically valid and doesn’t meet the stated requirements.
+====================================
