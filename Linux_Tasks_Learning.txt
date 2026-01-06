@@ -275,6 +275,15 @@ ipTbales
  - output chain -> chain shows the outgoing of the packets
  - forward chain -> to forward packet from source to destination
  - targets -> ACCEPT,REJECT,DROP
+ - installing the ipTbales
+    - sudo yum install iptables-services -y
+    - sudo systemctl start iptables
+    - sudo systemctl enable iptables
+ -making it persistant even server is reboot
+    sudo service iptables save
+    cat /etc/sysconfig/iptables
+    sudo reboot
+    sudo iptables -L -n    -> rule must exist even after reboot
  - commands related to it
    - iptables -F  -> flush all tables
    - iptables -L -> list all ip tables
