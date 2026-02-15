@@ -275,7 +275,7 @@ ipTbales
  - output chain -> chain shows the outgoing of the packets
  - forward chain -> to forward packet from source to destination
  - targets -> ACCEPT,REJECT,DROP
- - installing the ipTbales
+ - installing the iptables
     - sudo yum install iptables-services -y
     - sudo systemctl start iptables
     - sudo systemctl enable iptables

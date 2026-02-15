@@ -1,8 +1,0 @@
-Creation Autoscaling Groups
-
-we need an instance in a subnet of a default or created VPC 
-ASG is depended on Launch template 
-A launch template needs AMI so first create first AMI then launch template and finally ASG
-AS uses launch template as a refernce to create an instance
-launch template should in same VPC and use same security groups as AMI 
-An ASG has scheduling policy we can schedule the creation or deletion of instance.
