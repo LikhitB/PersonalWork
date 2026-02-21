@@ -1,0 +1,27 @@
+# Ignore sensitive files
+Terraform/Key
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+temp/
+
