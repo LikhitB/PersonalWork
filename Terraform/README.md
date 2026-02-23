@@ -19,3 +19,11 @@
 - protocol = `"tcp"` not `"http"` — AWS only accepts `tcp`, `udp`, `icmp`, `-1`
 - `-1` = all traffic (used in egress usually)
 - Security groups are **stateful** — inbound allowed = outbound response auto allowed
+
+## Variables and file structure for variables in terraform
+- `variables.tf` — defines variables with types and defaults
+- `terraform.tfvars` — assigns values to variables (not committed to VCS)
+- `outputs.tf` — defines outputs to expose values after apply
+-  terraform plan/apply/destroy -var-file="terraform.tfvars"  -> applies the variables from the tfvars file if we dont specify -var-file it will ask us to input the variables values during the plan/apply phase
+-  Through system environment variables (e.g., `export TF_VAR_variable_name=value`) — useful for CI/CD pipelines or sensitive data
+-  But the env variables should start with `TF_VAR_` in environment variables of the system.
