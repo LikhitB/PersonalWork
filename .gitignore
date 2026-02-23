@@ -5,6 +5,12 @@ Terraform/Key
 *.tfstate
 *.tfstate.backup
 
+# Terraform directories and provider binaries
+.terraform/
+*.exe
+*.zip
+*.dll
+
 # IDE and editor files
 .vscode/
 .idea/
