@@ -1,6 +1,10 @@
 # Ignore sensitive files
 Terraform/Key
 
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+
 # IDE and editor files
 .vscode/
 .idea/
@@ -24,4 +28,3 @@ logs/
 # Temporary files
 *.tmp
 temp/
-
