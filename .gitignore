@@ -10,6 +10,7 @@ Terraform/Key
 *.exe
 *.zip
 *.dll
+*.terraform.lock.hcl
 
 # IDE and editor files
 .vscode/
