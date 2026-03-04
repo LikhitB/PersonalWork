@@ -1,1 +1,1 @@
-ports=80
+ports = 80

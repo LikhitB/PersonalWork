@@ -2,7 +2,6 @@
 Terraform/Key
 
 # Terraform state files
-*
 .tfstate
 *.tfstate.backup
 

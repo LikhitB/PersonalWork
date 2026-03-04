@@ -1,7 +1,3 @@
-provider "aws" {
-    region = "ap-south-1"
-}
-
 # # count,variables,tags
 # resource "aws_instance" "project" {
 #     ami="ami-051a31ab2f4d498f5"
@@ -30,22 +26,24 @@ provider "aws" {
 #         values=["dev"]
 #     }
 # }
+
 #datasource for creating the dynamic latest AMI
-data "aws_ami" "latest_ami"{
-    most_recent = true
-    owners=["amazon"]
-    filter {
-        name="name"
-        values=["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-    }
+data "aws_ami" "latest_ami" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
 }
-resource "aws_instance" "new_instance"{
-    ami=data.aws_ami.latest_ami.id
-    tags={
-        Name="LatesAMIinstance"
-    }
-    instance_type = var.instance_type
+resource "aws_instance" "new_instance" {
+  ami = data.aws_ami.latest_ami.id
+  tags = {
+    Name = "LatesAMIinstance"
+  }
+  instance_type = var.instance_type
 }
+
 # }
 # output "lookup" {
 #     value= lookup(var.mymap,"name","No name present")
