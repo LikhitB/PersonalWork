@@ -12,7 +12,7 @@ resource "aws_iam_user_login_profile" "loginProfile"{
    for_each = aws_iam_user.users
    user = each.value.name
    password_reset_required= true
-   password_length = min(5)
+   password_length = min(10)
   lifecycle {
     ignore_changes = [
       password_length,

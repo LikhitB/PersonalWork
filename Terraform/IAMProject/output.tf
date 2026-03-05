@@ -1,6 +1,6 @@
-# output "users" {
-#   value = local.users
-# }
+output "users" {
+  value = local.users
+}
 output "account_id"{
   value= data.aws_caller_identity.users.account_id
 }

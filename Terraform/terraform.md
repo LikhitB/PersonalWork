@@ -158,3 +158,13 @@ Now use `port.value` — cleaner when the block name is long or ambiguous.
 | Resource Level                | `each.value` / `each.key`                   |
 | Dynamic Block                 | `<block_name>.value` (e.g. `ingress.value`) |
 | Dynamic Block with `iterator` | `<iterator_name>.value` (e.g. `port.value`) |
+
+
+## saving plan to a file and reading it
+- `terraform plan -out=plan.tfplan` — saves the plan to a file
+- `terraform show -json plan.tfplan` — shows the plan in JSON format for analysis or CI/CD integration
+
+## outputting values after apply
+- `terraform output` — lists all outputs defined in `outputs.tf`
+- `terraform output <output_name>` — shows a specific output value
+- `terraform output -json` — outputs all values in JSON format for scripting or CI/CD

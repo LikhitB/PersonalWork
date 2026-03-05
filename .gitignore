@@ -4,6 +4,7 @@ Terraform/Key
 # Terraform state files
 .tfstate
 *.tfstate.backup
+*.txt
 
 # Terraform directories and provider binaries
 .terraform/
