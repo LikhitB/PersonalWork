@@ -39,3 +39,5 @@ concept of CIDR
 Note:
 CN,GIT interview questions
 
+8 subnets each 255*8 => 2040 ips
+
