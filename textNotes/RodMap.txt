@@ -1,0 +1,119 @@
+Java
+Spring Boot
+REST APIs
+Microservices
+Docker
+Git
+SQL
+AWS/Azure basics
+=======================
+LLM
+Transformer
+Token
+Context Window
+Prompt
+Temperature
+Top-K
+Top-P
+Hallucination
+Inference
+Embedding
+Fine-Tuning
+RAG
+Vector Search
+Chunking
+=======================
+OpenAI API
+Gemini API
+Claude API
+
+Prompt Engineering
+
+System Prompt
+User Prompt
+Few Shot Prompting
+Chain of Thought
+Structured Output
+JSON Mode
+Function Calling
+Tool Calling
+
+Function Calling
+Tool Calling
+
+====================
+Embeddings
+Similarity Search
+Cosine Similarity
+Chunking
+Metadata Filtering
+Hybrid Search
+Semantic Search
+
+Pinecone
+Qdrant
+Weaviate
+ChromaDB
+====================
+
+RAG
+Retriever
+Retriever-Augmented Generation
+Embedding Model
+Chunking Strategy
+Context Injection
+Vector Search
+Knowledge Base
+Reranking
+Hybrid Search
+
+Parent Child Chunking
+Multi Query Retrieval
+Context Compression
+Reranking
+
+====================
+LangChain
+LlamaIndex
+
+Agent
+Tool
+Memory
+Chain
+Runnable
+Prompt Template
+Output Parser
+
+ReAct
+Planning
+Tool Selection
+Reasoning
+Execution Loop
+=====================
+Phase 6: AI Architecture
+====================
+Evaluation
+Latency
+Token Usage
+Prompt Evaluation
+Hallucination Detection
+Ground Truth
+Precision
+Recall
+Faithfulness
+Answer Relevancy
+
+======================
+Keywords HOT I 2026
+
+Agentic AI
+MCP (Model Context Protocol)
+A2A (Agent-to-Agent)
+AI Workflows
+Multi-Agent Systems
+RAG Evaluation
+Knowledge Graph RAG
+GraphRAG
+Reasoning Models
+Tool Use
+Computer Use Agents

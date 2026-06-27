@@ -1,0 +1,39 @@
+﻿# Copyright (c) 1993-2009 Microsoft Corp.
+#
+# This is a sample HOSTS file used by Microsoft TCP/IP for Windows.
+#
+# This file contains the mappings of IP addresses to host names. Each
+# entry should be kept on an individual line. The IP address should
+# be placed in the first column followed by the corresponding host name.
+# The IP address and the host name should be separated by at least one
+# space.
+#
+# Additionally, comments (such as these) may be inserted on individual
+# lines or following the machine name denoted by a '#' symbol.
+#
+# For example:
+#
+#      102.54.94.97     rhino.acme.com          # source server
+#       38.25.63.10     x.acme.com              # x client host
+
+# localhost name resolution is handled within DNS itself.
+#	127.0.0.1       localhost
+#	::1             localhost
+
+10.25.166.249        ctuc-opmsqflex-fsvr.mysqlflex.pearsonvue.com
+10.25.166.248        ctuc-opstmsqflex-fsvr.mysqlflex.pearsonvue.com
+10.25.166.247        dvuc-opmsqflex-fsvr.mysqlflex.pearsonvue.com
+10.25.166.246        pduc-opmsqflex-rep-fsvr.mysqlflex.pearsonvue.com
+10.25.166.245        pduc-opstmsqflex-rep-fsvr.mysqlflex.pearsonvue.com
+10.25.166.244        s1uc-opmsqflex-fsvr.mysqlflex.pearsonvue.com
+10.25.166.239        s1uc-ophmsqflex-fsvr.mysqlflex.pearsonvue.com
+10.25.166.243        s2uc-opmsqflex-fsvr.mysqlflex.pearsonvue.com
+
+20.115.224.42 www.juanitochristopher.coma-0135058400188.pearson.com #Remove when production ready
+# Added by Docker Desktop
+10.203.186.134 host.docker.internal
+10.203.186.134 gateway.docker.internal
+# To allow the same kube context to work on the host and the container:
+127.0.0.1 kubernetes.docker.internal
+# End of section
+

@@ -1,0 +1,374 @@
+JavaConcepts
+-------------
+
+1.What is a Record in Java?
+
+A Record is a special type of class introduced in Java to represent immutable data-carrying objects. It automatically generates constructors, accessors, equals(), hashCode(), and toString(), reducing boilerplate code and improving readability.
+
+Where do we use it?
+
+Mostly for:
+
+DTOs
+Request/Response objects
+Event objects
+Configuration data
+
+public record Employee(
+        Long id,
+        String name,
+        String department) {
+}
+User u1 = new User(1L, "Likhit");
+User u2 = new User(1L, "Likhit");
+
+System.out.println(u1.equals(u2));
+
+========================================================================
+
+2.What is serialization and deserialization in java ? 
+  -> there are 
+     -> built in serialization
+     -> JSON serialization
+
+Serialization is the process of converting a Java object into a stream of bytes.
+
+Why?
+- Save object to a file
+- Send object over a network
+- Store object in cache/database
+- Transfer object between JVMs
+
+Object --> Bytes
+
+Example:
+
+Student s = new Student(101, "Likhit");
+
+Serialization converts the object into bytes that can be stored or transmitted.
+
+
+2. What is Deserialization?
+----------------------------
+
+Deserialization is the process of converting a stream of bytes back into a Java object.
+
+Bytes --> Object
+
+Example:
+
+Bytes from file/network
+        ↓
+Deserialization
+        ↓
+Student Object
+
+
+3. Serialization Example
+-------------------------
+
+import java.io.*;
+
+class Student implements Serializable {
+    int id;
+    String name;
+
+    Student(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+}
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+
+        Student s = new Student(101, "Likhit");
+
+        FileOutputStream fos =
+                new FileOutputStream("student.ser");
+
+        ObjectOutputStream oos =
+                new ObjectOutputStream(fos);
+
+        oos.writeObject(s);
+
+        oos.close();
+    }
+}
+
+Flow:
+
+Student Object
+      ↓
+writeObject()
+      ↓
+Byte Stream
+      ↓
+student.ser
+
+
+4. Deserialization Example
+---------------------------
+
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+
+        FileInputStream fis =
+                new FileInputStream("student.ser");
+
+        ObjectInputStream ois =
+                new ObjectInputStream(fis);
+
+        Student s = (Student) ois.readObject();
+
+        ois.close();
+
+        System.out.println(s.name);
+    }
+}
+
+Output:
+
+Likhit
+
+Flow:
+
+student.ser
+      ↓
+readObject()
+      ↓
+Bytes
+      ↓
+Student Object
+
+
+5. Serializable Interface
+--------------------------
+
+A class must implement Serializable to allow serialization.
+
+class Student implements Serializable {
+}
+
+Important:
+
+Serializable is a Marker Interface.
+
+Marker Interface:
+- Contains no methods
+- Provides metadata to JVM
+
+Example:
+
+public interface Serializable {
+}
+
+Meaning:
+
+"This class is eligible for serialization."
+
+
+6. What if Serializable is not implemented?
+--------------------------------------------
+
+class Student {
+    int id;
+}
+
+Attempting:
+
+oos.writeObject(student);
+
+Results in:
+
+java.io.NotSerializableException
+
+Reason:
+
+JVM does not allow serialization of classes that do not implement Serializable.
+
+
+7. transient Keyword
+---------------------
+
+Used when a field should NOT be serialized.
+
+Example:
+
+class User implements Serializable {
+
+    String username;
+
+    transient String password;
+}
+
+Before Serialization:
+
+username = admin
+password = 123
+
+After Deserialization:
+
+username = admin
+password = null
+
+Reason:
+
+transient fields are skipped during serialization.
+
+
+8. serialVersionUID
+-------------------
+
+Example:
+
+class Student implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+}
+
+Purpose:
+
+Acts like a version number for a serialized class.
+
+Scenario:
+
+Version 1:
+
+class Student {
+    int id;
+}
+
+Object gets serialized.
+
+Later:
+
+Version 2:
+
+class Student {
+    int id;
+    String name;
+}
+
+Now class structure changed.
+
+During deserialization Java checks serialVersionUID.
+
+If mismatch occurs:
+
+java.io.InvalidClassException
+
+
+9. Real-World Uses
+------------------
+
+A) File Storage
+
+Save object to disk and restore later.
+
+Examples:
+- Game State
+- User Session
+- Application Settings
+
+
+B) Network Communication
+
+Client sends object to server.
+
+Instead of:
+
+id = 101
+name = Likhit
+
+Send complete object directly.
+
+
+C) Distributed Systems
+
+Service A
+    ↓
+Serialize
+    ↓
+JSON/XML/Bytes
+    ↓
+Deserialize
+    ↓
+Service B
+
+Most modern applications use JSON serialization instead of Java's built-in serialization.
+
+
+10. Interview Definitions
+--------------------------
+
+Serialization:
+
+"The process of converting a Java object into a byte stream for storage or transmission."
+
+Deserialization:
+
+"The process of reconstructing a Java object from a byte stream."
+
+
+11. Easy Way to Remember
+------------------------
+
+Object
+  ↓ Pack
+Serialization
+  ↓
+Bytes
+  ↓ Transport
+Bytes
+  ↓ Unpack
+Deserialization
+  ↓
+Object
+
+Serialization   = Object → Bytes
+
+Deserialization = Bytes → Object
+
+
+12. Important Interview Points
+------------------------------
+
+✓ Serializable is a Marker Interface.
+✓ Marker Interface contains no methods.
+✓ writeObject() performs serialization.
+✓ readObject() performs deserialization.
+✓ transient fields are not serialized.
+✓ serialVersionUID controls version compatibility.
+✓ Without Serializable, NotSerializableException occurs.
+✓ Serialization = Object → Bytes.
+✓ Deserialization = Bytes → Object.
+
+
+===========================================
+
+Open/Closed principle
+---------------------
+-> In the proctorInference service below thing follows this principle.
+-> 2 stratergies based on profile the stratergy changes
+-> in suck a way the code is open for new strategy and closed for modification of existing code.
+ImageInferenceResponse<ScanImageResponse> response =
+                    geminiExecutionStrategy.execute(sessionId, timestamp, request, ScanImageResponse.class);
+===========================================
+
+Reactive Programming JAVA Concepts
+-----------------------------------
+BLOCKING (Lazy or Eager):
+Thread: ──── working ────|waiting...............|── working ──
+                         ↑                      ↑
+                    DB call made           DB responds
+                    (thread stuck here, doing nothing)
+
+
+NON-BLOCKING:
+Thread: ──── working ────|───── doing other work ────|── working ──
+                         ↑                            ↑
+                    DB call made                 DB responds
+                    (thread is FREE, not stuck)

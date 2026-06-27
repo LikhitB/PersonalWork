@@ -1,0 +1,114 @@
+======================================================================
+     CRACK MAANG - 20-WEEK DSA, SYSTEM DESIGN & AI BOOTCAMP
+======================================================================
+
+--- DATA STRUCTURES & ALGORITHMS (WEEKS 1–8) ---
+
+WEEK 1
+- Foundations of Algorithms
+- Sorting Algorithms Fundamentals
+- Advanced Sorting & Searching
+
+WEEK 2
+- Recursion Fundamentals
+- Advanced Recursion Techniques
+- Arrays & Two Pointer Technique
+
+WEEK 3
+- Linked Lists - Basics
+- Advanced Linked List Problems
+- Stacks & Queues
+
+WEEK 4
+- Introduction to OOP for DSA
+- Trees - Binary Trees Basics
+- Binary Search Trees (BST)
+
+WEEK 5
+- Advanced Tree Structures
+- Heaps & Priority Queues
+- Hashmaps & Hashing Techniques
+
+WEEK 6
+- Backtracking Fundamentals
+- Advanced Backtracking
+- Introduction to Dynamic Programming
+
+WEEK 7
+- Dynamic Programming - Tabulation
+- DP on Grids & Strings
+- Advanced DP Patterns
+
+WEEK 8
+- Graph Fundamentals & Representations
+- Graph Traversals - BFS & DFS
+- Advanced Graph Algorithms
+
+
+--- SYSTEM DESIGN (WEEKS 9–12) ---
+
+WEEK 9
+- Introduction to System Design
+- Scalability Fundamentals
+- Distributed Systems Principles
+
+WEEK 10
+- Databases - SQL & NoSQL
+- Database Optimization
+- Communication Patterns in Distributed Systems
+
+WEEK 11
+- Network Fundamentals for System Design
+- Caching Strategies & Implementation
+- Case Study - Designing YouTube
+
+WEEK 12
+- Case Study - Designing WhatsApp/Messenger
+- Case Study - Designing Uber
+- Mock Interview - System Design Round
+
+
+--- ARTIFICIAL INTELLIGENCE & MLOPS (WEEKS 13–18) ---
+
+WEEK 13
+- Introduction to Machine Learning for Engineers
+- Python for Machine Learning
+- Classical Machine Learning Algorithms
+
+WEEK 14
+- Introduction to Neural Networks & Deep Learning
+- Deep Learning Frameworks & Building Neural Networks
+- Computer Vision with CNNs
+
+WEEK 15
+- Natural Language Processing Fundamentals
+- Transformers & Modern NLP
+- ML Model Deployment & MLOps
+
+WEEK 16
+- Working with Pre-trained Models & APIs
+- Recommendation Systems
+- Time Series Forecasting & Anomaly Detection
+
+WEEK 17
+- Reinforcement Learning Fundamentals
+- Explainable AI & Model Interpretability
+- AI Ethics, Bias & Fairness
+
+WEEK 18
+- AI for Software Development & Code Generation
+- Building AI-Powered Applications
+- Capstone Project Planning
+
+
+--- CAPSTONE & CAREER PREP (WEEKS 19–20) ---
+
+WEEK 19
+- Capstone Development - Phase 1
+- Capstone Development - Phase 2
+- Capstone Deployment & Final Polish
+
+WEEK 20
+- Capstone Project Presentations
+- Interview Preparation & Career Guidance
+- AI Trends, Future Directions & Closing

@@ -1,0 +1,372 @@
+How Violations published:
+=========================
+
+1. Gemini returns
+   ImageInferenceResponse<ScanImageResponse>
+                |
+                v
+2. GeminiInferenceResultProcessingService.process(...)
+                |
+                v
+3. buildCombinedViolation(...)
+   -> produces List<ViolationResponse>
+                |
+   +------------+
+   |
+   |
+   +-- violations exist?
+   |      |
+   |      +-- YES
+   |            -> mark active in Redis/cache
+   |            -> publish to internal queue
+   |            -> downstream publishes violation to Ably
+   |
+   +-- NO
+          |
+          +-- was session previously in violation state?
+                 |
+                 +-- YES
+                 |      -> clear active state
+                 |      -> publish to internal queue
+                 |      -> downstream publishes clearance to Ably
+                 |
+                 +-- NO
+                        -> no publish
+                        -> delete blob
+
+=========================================================================================================
+How the publish deal with the clearance and VT(Virtual Thread) race conditions(current impl is clearance before publish)
+=========================================================================================================
+
+Code Block
+----------
+
+`````
+if (sessionViolationStateService.checkAndClearIfActive(sessionId)) {
+                    inferenceResultProducer.publishInferenceResult(
+                            sessionId, timestamp, blobPathLocation, inferenceResponse);
+                    LOGGER.info(
+                            "No violations, clearance required — publishing to queue: sessionId={}, timestamp={}, blobPathLocation={}",
+                            sessionId,
+                            timestamp,
+                            blobPathLocation);
+````
+
+
+Session 101: activeViolation = TRUE (in Redis)
+
+Frame A (no violation) → Virtual Thread 1 (VT1) starts
+Frame B (no violation) → Virtual Thread 2 (VT2) starts
+
+VT1: requiresClearanceNotification(101) → reads Redis → TRUE ✅ "I should clear"
+VT2: requiresClearanceNotification(101) → reads Redis → TRUE ✅ "I should clear"
+     ↑ VT2 reads SAME TRUE because VT1 hasn't cleared yet!
+
+VT1: publishInferenceResult(...)   ← takes ~200ms network time
+VT2: publishInferenceResult(...)   ← ALSO runs, duplicate publish!
+
+VT1: markViolationsCleared(101) → Redis = FALSE
+VT2: markViolationsCleared(101) → Redis = FALSE
+
+RESULT:
+✅ State is cleared
+❌ TWO clearance messages sent to Ably/Service Bus
+
+Session 101: activeViolation = TRUE (in Redis)
+----------------------------------------------------------------------
+Frame A (no violation) → Virtual Thread 1 (VT1) starts
+Frame B (no violation) → Virtual Thread 2 (VT2) starts
+
+VT1: checkAndClearIfActive(101)
+       → reads Redis  → TRUE
+       → writes FALSE → immediately
+       → returns TRUE ✅ "I should publish"
+
+VT2: checkAndClearIfActive(101)
+       → reads Redis  → FALSE (VT1 already cleared it!)
+       → returns FALSE ❌ "Nothing to do"
+
+VT1: publishInferenceResult(...)   ← only VT1 publishes
+VT2: does nothing, moves on
+
+RESULT:
+✅ State is cleared
+✅ Only ONE clearance message sent
+==============================================================
+
+OPEN CLOSED PRINCIPLE FOLLOWED BY INFERENCE STARTERGIES
+-------------------------------------------------------
+
+[Caller]
+  ProctorInferenceHandlerJob / GeminiInferenceService
+                |
+                v
+  (depends only on abstraction)
+      GeminiExecutionStrategy
+                |
+      +---------+---------+
+      |                   |
+      v                   v
+DefaultGeminiInferenceStrategy   SimulatedGeminiInferenceStrategy
+(real Gemini call)               (mock/perf profile behavior)
+      |                   |
+      +---------+---------+
+                |
+                v
+   ImageInferenceResponse<T>
+                |
+                v
+ [Result processing + publish/store]
+
+=====================================================================================================
+How Schema is generated and it is feeded as schemaOutput to "GenerateContentConfig" and About gemini?
+=====================================================================================================
+-> it is generated in the SchemaGenerator Class
+   -> buildObjectSchema()
+   -> buildFieldSchema()
+   -> Gemini needs content and contentConfig
+   -> content means the image and prompt info
+   -> contentConfig means the required configuration which will be used by the Gemni to produce the data
+Schema
+-------
+{
+  "type": "OBJECT",
+  "properties": {
+    "isCandidatePresent": { "type": "BOOLEAN", "nullable": true },
+    "isAdditionalPersonPresent": { "type": "BOOLEAN", "nullable": true },
+    "unauthorizedItemsFound": {
+      "type": "ARRAY",
+      "items": { "type": "STRING", "nullable": true },
+      "nullable": true
+    },
+    "isDark": { "type": "BOOLEAN", "nullable": true },
+    "timestamp": {
+      "type": "STRING",
+      "nullable": true,
+      "description": "REQUIRED when ... ISO-8601 UTC format."
+    }
+  },
+  "propertyOrdering": [
+    "isCandidatePresent",
+    "isAdditionalPersonPresent",
+    "unauthorizedItemsFound",
+    "isDark",
+    "timestamp"
+  ]
+}
+
+ContentConfig
+--------
+{
+  "responseMimeType": "application/json",
+  "temperature": 0.1,
+  "topP": 0.7,
+  "topK": 5,
+  "maxOutputTokens": 1000,
+  "responseJsonSchema": { ... },
+  "systemInstruction": "You are a proctoring detector. Return JSON only."
+}
+
+Content
+--------
+-> parts is the thing where gemini takes care of it is default cannot be changed!
+{
+  "role": "user",
+  "parts": [
+    { "text": "Check candidate presence and suspicious objects" },
+    { "inlineData": { "mimeType": "image/jpeg", "data": "<bytes>" } }
+  ]
+}
+
+
+
+==================================================================
+Everything About ServiceBus and asyn communication in the Project
+==================================================================
+
+@FunctionalInterface
+public interface QueueJob {
+    void doWork(String uuid, Map<String, String> parameters);
+}
+1. The queuejob is set as funtionalInterface because queueJob has only one method which could be overrriden so this follows the
+"Single Responsibility Priciple"
+
+
+1.Config details
+----------------
+QUEUE CONFIG (QueueConfig.java) — Infrastructure/Broker Settings
+
+Field                              | Local Value | Meaning
+-----------------------------------|-------------|--------------------------------------------------
+serviceBusConnectionString         | (secret)    | Connection to Service Bus for frame extraction queue
+piqServiceBusConnectionString      | (secret)    | Connection to Service Bus for proctor inference queue
+blobDeletionServiceBusConnectionString | (secret) | Connection to Service Bus for blob deletion queue
+sameFaceComparisonServiceBusConnectionString | (secret) | Connection to Service Bus for face comparison queue
+maxQueueSizeMb                     | 5120 (5GB)  | Max storage size of the queue before rejecting new messages
+maxDeliveryCount                   | 1           | Number of delivery attempts before message goes to DLQ
+defaultMessageTimeToLive           | PT24H       | Message expires after 24 hours if not consumed
+autoLockRenewDuration              | PT15M       | SDK auto-renews lock for up to 15 min while handler runs
+lockDuration                       | PT5M        | Initial lock period; other consumers cant see message for 5 min
+deadLetteringOnMessageExpiration   | false       | Expired messages are dropped (not moved to DLQ)
+maxConcurrentCalls                 | 3           | Process up to 3 messages in parallel from the queue
+
+
+QUEUE JOB CONFIG (QueueJobConfig.java) — Per-Job Application Settings
+
+Job Type               | Queue Name (local)              | maxRetries | progressiveRetry | startDelay | retryDelay
+-----------------------|---------------------------------|------------|------------------|------------|----------
+frameExtractionJob     | frameExtractionqueue-likhit     | 0          | false            | 0s         | 0s
+proctorInferenceJob    | proctorInferencequeue-likhit    | 0          | false            | 0s         | 0s
+blobDeletionJob        | blobDeletionqueue-likhit        | 0          | false            | 0s         | 0s
+sameFaceComparisonJob  | sameFaceComparisonqueue-local   | 0          | false            | 0s         | 0s
+
+JOB CONFIG FIELDS EXPLAINED
+
+Field            | Meaning
+-----------------|-----------------------------------------------------------
+queueName        | Actual Azure Service Bus queue name
+maxRetries       | App-level retries (opcommons handles). 0 = no retry
+progressiveRetry | If true, delay doubles between retries (exponential backoff)
+startDelay       | Initial delay before first execution attempt
+retryDelay       | Wait time between retries (irrelevant when maxRetries=0)
+
+
+RETRY LAYERS (Two Independent Levels)
+
+Layer              | Config Field      | Current Value | What Happens On Failure
+-------------------|-------------------|---------------|-------------------------------------------
+App-level          | maxRetries        | 0             | Job fails once, no retry at app layer
+Broker-level       | maxDeliveryCount  | 1             | Message delivered once, if not completed -> DLQ
+
+
+MESSAGE LIFECYCLE (With Current Settings)
+
+Step | What Happens
+-----|----------------------------------------------------------------------
+1    | Message pushed to queue (may have scheduled delay)
+2    | After delay expires, message becomes VISIBLE
+3    | Listener picks it up, message LOCKED for 5 min (lockDuration)
+4    | If processing takes longer, SDK auto-renews lock up to 15 min
+5a   | SUCCESS: message completed, removed from queue
+5b   | FAILURE: message abandoned, redelivered
+6    | After 1 failed delivery (maxDeliveryCount=1), message goes to DLQ
+7    | If never consumed within 24h (TTL), message is DROPPED (not DLQ)
+
+
+2.STARTUP SEQUENCE
+-------------------
+Spring Boot starts
+       │
+       ▼
+ApplicationReadyEvent fires
+       │
+       ▼
+JobQueueService.applicationReadyEvent()
+       │
+       ├──► ensureQueuesExist()
+       │       ├── Create frameExtractionQueue (if not exists)
+       │       ├── Create proctorInferenceQueue (if not exists)
+       │       ├── Create blobDeletionQueue (if not exists)
+       │       └── Create sameFaceComparisonQueue (if not exists)
+       │
+       └──► startQueueListener()
+               └── serviceBusWrapper.startServiceBusClient(
+                       queueName = "frameExtractionqueue-...",
+                       maxConcurrentCalls = 3,
+                       autoLockRenewDuration = PT15M,
+                       jobFactory = JobFactoryImpl)
+               └── Listener is NOW HOT — consuming messages
+
+
+3.MESSAGE CONSUMPTION FLOW (per message)
+-----------------------------------------
+Azure delivers message to listener
+       │
+       ▼
+ServiceBusWrapper.messageProcessor()
+       │  Deserializes AMQP message → JobItem
+       │
+       ▼
+ServiceBusWrapper.receiveMessage(jobItem, jobFactory)
+       │
+       ├──► Notify startedListeners
+       │
+       ├──► jobFactory.createJob(jobItem)
+       │       │
+       │       ▼
+       │    JobFactoryImpl:
+       │       JobType.valueOf("FRAME_EXTRACTION_JOB").getJobClass()
+       │       → FrameExtractionHandlerJob.class
+       │       → newInstance() + autowireBean()
+       │       → returns ready QueueJob
+       │
+       ├──► queueJob.doWork(uuid, parameters)
+       │       │
+       │       ▼
+       │    FrameExtractionHandlerJob.doWork()
+       │       ├── Validate UUID & frameExtractorId
+       │       ├── Get SessionDetails from DB
+       │       ├── Check shouldProcessSession()
+       │       │      (STOPPED → exit, PAUSED → exit)
+       │       ├── Find TS segments
+       │       ├── Extract frames from segments
+       │       ├── processExtractionResults()
+       │       │      ├── Upload frames to blob storage
+       │       │      ├── Update DB progress
+       │       │      ├── Push PROCTOR_INFERENCE_JOB(s)
+       │       │      └── Push SAME_FACE_COMPARISON_JOB (if marked)
+       │       └── scheduleNextExtractionJob()
+       │              └── Push FRAME_EXTRACTION_JOB with delay (self-schedule)
+       │
+       ├──► SUCCESS: context.complete() → message removed
+       │
+       └──► FAILURE (exception):
+               ├── retries < maxRetries? → pushScheduledJob (retry)
+               └── retries exhausted? → log "Failed job", notify listeners
+
+4.RETRY & ERROR HANDLING DESIGN
+--------------------------------
+LAYER 1: PUSH RETRY (sending message to Azure)
+  WHO:    ServiceBusWrapper.pushScheduledMessage()
+  WHAT:   If Azure rejects/timeout on send, retry up to 3 times
+  HOW:    for-loop with closeSender + fresh connection each attempt
+  SCOPE:  Only retries the SEND operation, not job execution
+
+LAYER 2: APP-LEVEL RETRY (job execution failure)
+  WHO:    ServiceBusWrapper.receiveMessage() catch block
+  WHAT:   If doWork() throws, re-push job as new scheduled message
+  HOW:    Increment retries counter, calculate delay, pushScheduledJob()
+  SCOPE:  Self-scheduling retry (new message per attempt)
+  CONFIG: maxRetries=0 (DISABLED), progressiveRetry=false
+
+LAYER 3: BROKER-LEVEL RETRY (Azure redelivery)
+  WHO:    Azure Service Bus infrastructure
+  WHAT:   If message not completed (lock expires/abandon), redeliver
+  HOW:    Azure tracks deliveryCount, compares to maxDeliveryCount
+  SCOPE:  Same message redelivered (not a new message)
+  CONFIG: maxDeliveryCount=1 (ONE attempt only, then DLQ)
+
+================================
+GEMINI INFERENCE QUEUE DETAILS
+================================
+
+Image upload
+   ↓
+Gemini inference
+   ↓
+GeminiInferenceResultProcessingService
+   ├─ violation found → push to Gemini inference queue
+   │    - carries job timestamp
+   │    - also carries scan/gemini timestamp if present
+   └─ no violation     → if previous bad state, still push for clearance; else ignore/delete blob
+                        - clearance path keeps job timestamp
+                        - OCR may later replace it with image timestamp
+            ↓
+GeminiInferenceResultHandlerJob (queue consumer)
+   ├─ violation → Ably "NOTOK" / violation event
+   │    - prefers `scanTimestamp` from Gemini
+   │    - falls back to job timestamp
+   │    - DB save uses scan timestamp if present, else job timestamp
+   └─ no violation → Ably "OK" / `noActiveEvents` clearance event
+        - uses OCR timestamp if readable
+        - otherwise falls back to job timestamp
