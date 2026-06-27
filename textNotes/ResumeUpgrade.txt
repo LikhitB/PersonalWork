@@ -5,7 +5,7 @@ Tech: Java, Spring Boot, Azure SDK, Gemini Flash 2.5, JFR, Virtual Threads
 [Concurrency/Scalability]-Redesigned the Gemini-Flash-2.5 inference processing to use Java Virtual Thread pool instead of traditional thread pools. This eliminated thread starvation for I/O operations and reduces memory overhead from ~2MB to ~1KB per thread and reduced the chance of throttling and Azure service Bus queue and enhanced concurrency.
 [Maintainability with SOLID] Refactored Gemini inference to an Open/Closed principle-compliant strategy architecture, allowing new execution behaviours to be added without changing the core service file.
 [GenAI] Gemini-based multimodal inference pipeline that converts image + prompt inputs into structured JSON responses using schema-driven output generation, enabling type-safe deserialization, asynchronous processing, and scalable proctoring analysis.
-
+[Architecture]
 
 
 
